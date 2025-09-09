@@ -148,6 +148,21 @@ Default dependencies, identical to pixi's `[dependencies]` section. They are inh
 
 
 ```toml
+[devenv.constraints]
+qt = ">=5.15"
+
+[devenv.target.win.constraints]
+vc = ">=14"
+```
+
+Default `constraints`. They are inherited by default by downstream projects.
+
+`constraints` contain version specs similar to `[dependencies]`, but contrary to `dependencies` the specs are not part of the environment by default.
+
+They will be added to the versions specifiers of the section *if* a downstream project explicitly declares that dependency.
+
+
+```toml
 [devenv.env-vars]
 # Lists are prepended to existing variable of same name, with the appropriate joiner for the platform (':' on Linux, ';' on Windows).
 # {{ project_dir }} is replaced by the project directory.
@@ -173,11 +188,11 @@ This takes the place of the `[activation]` section of the default pixi configura
 ```toml
 [devenv.feature.python310]
 dependencies = { python = "3.10.*" }
-activation = { env = { CONDA_PY = "310" } }
+env-vars = { CONDA_PY = "310" }
 
 [devenv.feature.python312]
 dependencies = { python = "3.12.*" }
-activation = { env = { CONDA_PY = "312" } }
+env-vars = { CONDA_PY = "312" }
 
 [devenv.feature.test]
 dependencies = { pytest = "*" }
