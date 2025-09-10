@@ -1,0 +1,9 @@
+ConsolidatedProject(name='b',
+                    dependencies={'coverage': MergedSpec(sources=('b',),
+                                                         spec=Spec(version='21.0',
+                                                                   build='',
+                                                                   channel=''))},
+                    pypi_dependencies={},
+                    env_vars={},
+                    target={},
+                    feature={})

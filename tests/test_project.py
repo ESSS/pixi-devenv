@@ -16,7 +16,8 @@ def test_parse_complete_case(
     ]
     
     [devenv.inherit]
-    dependencies = true
+    dependencies = false
+    pypi-dependencies = ["core"]
     env-vars = ["core"]
     
     [devenv.inherit.features]

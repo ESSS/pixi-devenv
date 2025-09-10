@@ -108,14 +108,27 @@ def _consolidate_dependencies(
 
     constraints: dict[str, MergedSpec] = {}
 
+    starting_project = workspace.starting_project
+
     for project in workspace.iter_downstream():
-        update_specs(project, constraints, project.iter_constraints())
+        if starting_project.inherit.use_dependencies(
+            project.name
+        ) or starting_project.inherit.use_pypi_dependencies(project.name):
+            update_specs(project, constraints, project.iter_constraints())
 
     dependencies: dict[str, MergedSpec] = {}
     pypi_dependencies: dict[str, MergedSpec] = {}
 
     for project in workspace.iter_downstream():
-        update_specs(project, dependencies, project.iter_dependencies())
-        update_specs(project, pypi_dependencies, project.iter_pypi_dependencies())
+        if (
+            starting_project.inherit.use_dependencies(project.name)
+            or project is starting_project
+        ):
+            update_specs(project, dependencies, project.iter_dependencies())
+        if (
+            starting_project.inherit.use_pypi_dependencies(project.name)
+            or project is starting_project
+        ):
+            update_specs(project, pypi_dependencies, project.iter_pypi_dependencies())
 
     return dependencies, pypi_dependencies

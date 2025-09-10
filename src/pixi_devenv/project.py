@@ -86,10 +86,28 @@ class Feature:
 class Inheritance:
     dependencies: bool | tuple[str, ...] = True
     pypi_dependencies: bool | tuple[str, ...] = serde.field(
-        rename="pypy-dependencies", default=True
+        rename="pypi-dependencies", default=True
     )
     env_vars: bool | tuple[str, ...] = serde.field(rename="env-vars", default=True)
     features: dict[str, bool | tuple[str, ...]] = serde.field(default_factory=dict)
+
+    def use_dependencies(self, name: ProjectName) -> bool:
+        match self.dependencies:
+            case bool():
+                return self.dependencies
+            case tuple() as names:
+                return name in names
+            case unreachable:
+                assert_never(unreachable)
+
+    def use_pypi_dependencies(self, name: ProjectName) -> bool:
+        match self.pypi_dependencies:
+            case bool():
+                return self.pypi_dependencies
+            case tuple() as names:
+                return name in names
+            case unreachable:
+                assert_never(unreachable)
 
 
 @serde.serde(tagging=serde.Untagged)
@@ -113,7 +131,7 @@ class Project:
     )
     target: dict[str, Aspect] = serde.field(default_factory=dict)
     feature: dict[str, Feature] = serde.field(default_factory=dict)
-    inherit: Inheritance | None = None
+    inherit: Inheritance = serde.field(default_factory=Inheritance)
 
     filename: Path = serde.field(skip=True, init=False)
 

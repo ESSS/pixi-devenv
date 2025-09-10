@@ -121,3 +121,72 @@ def test_dependencies_with_constraints(
     ws = Workspace.from_starting_file(b_toml)
     project = consolidate_devenv(ws)
     file_regression.check(devenv_tester.pprint_for_regression(project))
+
+
+def test_dependencies_inheritance(
+    devenv_tester: DevEnvTester,
+    file_regression: FileRegressionFixture,
+    request: pytest.FixtureRequest,
+) -> None:
+    devenv_tester.write_devenv(
+        "bootstrap",
+        """
+        [devenv.dependencies]
+        boltons = ">=24.0"
+        """,
+    )
+    devenv_tester.write_devenv(
+        "a",
+        """
+        devenv.upstream = ["../bootstrap"]
+
+        [devenv.dependencies]
+        boltons = ">=23.0"   
+        pytest = "*"   
+        
+        [devenv.pypi-dependencies]
+        fast-api = "*"
+        """,
+    )
+    b_toml = devenv_tester.write_devenv(
+        "b",
+        """
+        devenv.upstream = ["../a"]
+
+        [devenv.dependencies]
+        coverage = "21.0"
+        
+        [devenv.inherit]
+        dependencies = false
+        pypi-dependencies = false
+        """,
+    )
+    ws = Workspace.from_starting_file(b_toml)
+    project = consolidate_devenv(ws)
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project),
+        basename=f"{request.node.name}_no_inheritance",
+    )
+
+    b_toml = devenv_tester.write_devenv(
+        "b",
+        """
+        devenv.upstream = ["../a"]
+
+        [devenv.dependencies]
+        coverage = "21.0"
+        
+        [devenv.pypi-dependencies]
+        flask = "*"
+
+        [devenv.inherit]
+        dependencies = ["bootstrap"]
+        pypi-dependencies = ["bootstrap"]
+        """,
+    )
+    ws = Workspace.from_starting_file(b_toml)
+    project = consolidate_devenv(ws)
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project),
+        basename=f"{request.node.name}_bootstrap_inheritance",
+    )
