@@ -1,3 +1,4 @@
+import pprint
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -11,3 +12,10 @@ class DevEnvTester:
         toml.parent.mkdir(parents=True, exist_ok=True)
         toml.write_text(contents)
         return toml
+
+    def pprint_for_regression(self, obj: object) -> str:
+        contents = pprint.pformat(obj)
+        contents = contents.replace(str(self.projects_path.as_posix()), "<TMP_PATH>")
+        contents = contents.replace("WindowsPath(", "Path(")
+        contents = contents.replace("PosixPath(", "Path(")
+        return contents

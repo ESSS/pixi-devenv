@@ -16,8 +16,23 @@ ProjectName = NewType("ProjectName", str)
 
 
 @dataclass
+class Root:
+    devenv: Project
+
+
+@dataclass
 class Upstream:
     path: str
+
+    @classmethod
+    def normalized(cls, upstream: str | Upstream) -> Upstream:
+        match upstream:
+            case str() as path:
+                return Upstream(path)
+            case Upstream():
+                return upstream
+            case unreachable:
+                assert_never(unreachable)
 
 
 @dataclass
@@ -26,6 +41,16 @@ class Spec:
     build: str = ""
     channel: str = ""
 
+    @classmethod
+    def normalized(cls, spec: Spec | str) -> Spec:
+        match spec:
+            case str() as version:
+                return Spec(version=version, build="", channel="")
+            case Spec():
+                return spec
+            case unreachable:
+                assert_never(unreachable)
+
 
 EnvVarValue = Union[str, tuple[str, ...]]
 
@@ -33,27 +58,27 @@ EnvVarValue = Union[str, tuple[str, ...]]
 @serde.serde(tagging=serde.Untagged)
 @dataclass
 class Aspect:
-    dependencies: dict[str, Spec | str] | None = None
-    pypi_dependencies: dict[str, Spec | str] | None = serde.field(
-        rename="pypi-dependencies", default=None
+    dependencies: dict[str, Spec | str] = serde.field(default_factory=dict)
+    pypi_dependencies: dict[str, Spec | str] = serde.field(
+        rename="pypi-dependencies", default_factory=dict
     )
-    constraints: dict[str, Spec | str] | None = None
-    env_vars: dict[str, EnvVarValue] | None = serde.field(
-        rename="env-vars", default=None
+    constraints: dict[str, Spec | str] = serde.field(default_factory=dict)
+    env_vars: dict[str, EnvVarValue] = serde.field(
+        rename="env-vars", default_factory=dict
     )
 
 
 @serde.serde(tagging=serde.Untagged)
 class Feature:
-    dependencies: dict[str, Spec | str] | None = None
-    pypi_dependencies: dict[str, Spec | str] | None = serde.field(
-        rename="pypi-dependencies", default=None
+    dependencies: dict[str, Spec | str] = serde.field(default_factory=dict)
+    pypi_dependencies: dict[str, Spec | str] = serde.field(
+        rename="pypi-dependencies", default_factory=dict
     )
-    constraints: dict[str, Spec | str] | None = None
-    env_vars: dict[str, EnvVarValue] | None = serde.field(
-        rename="env-vars", default=None
+    constraints: dict[str, Spec | str] = serde.field(default_factory=dict)
+    env_vars: dict[str, EnvVarValue] = serde.field(
+        rename="env-vars", default_factory=dict
     )
-    target: dict[str, Aspect] | None = None
+    target: dict[str, Aspect] = serde.field(default_factory=dict)
 
 
 @serde.serde(tagging=serde.Untagged)
@@ -78,16 +103,16 @@ class Project:
     environments: dict[str, Any] | None = None
 
     upstream: tuple[str | Upstream, ...] = ()
-    dependencies: dict[str, Spec | str] | None = None
-    pypi_dependencies: dict[str, Spec | str] | None = serde.field(
-        rename="pypi-dependencies", default=None
+    dependencies: dict[str, Spec | str] = serde.field(default_factory=dict)
+    pypi_dependencies: dict[str, Spec | str] = serde.field(
+        rename="pypi-dependencies", default_factory=dict
     )
-    constraints: dict[str, Spec | str] | None = None
-    env_vars: dict[str, EnvVarValue] | None = serde.field(
-        rename="env-vars", default=None
+    constraints: dict[str, Spec | str] = serde.field(default_factory=dict)
+    env_vars: dict[str, EnvVarValue] = serde.field(
+        rename="env-vars", default_factory=dict
     )
-    target: dict[str, Aspect] | None = None
-    feature: dict[str, Feature] | None = None
+    target: dict[str, Aspect] = serde.field(default_factory=dict)
+    feature: dict[str, Feature] = serde.field(default_factory=dict)
     inherit: Inheritance | None = None
 
     filename: Path = serde.field(skip=True, init=False)
@@ -117,16 +142,20 @@ class Project:
         return root.devenv
 
     def iter_upstream(self) -> Iterator[Upstream]:
-        for upstream in self.upstream:
-            match upstream:
-                case str() as path:
-                    yield Upstream(path)
-                case Upstream():
-                    yield upstream
-                case unreachable:
-                    assert_never(unreachable)
+        yield from (Upstream.normalized(x) for x in self.upstream)
 
+    def iter_dependencies(self) -> Iterator[tuple[str, Spec]]:
+        yield from (
+            (name, Spec.normalized(spec)) for (name, spec) in self.dependencies.items()
+        )
 
-@dataclass
-class Root:
-    devenv: Project
+    def iter_pypi_dependencies(self) -> Iterator[tuple[str, Spec]]:
+        yield from (
+            (name, Spec.normalized(spec))
+            for (name, spec) in self.pypi_dependencies.items()
+        )
+
+    def iter_constraints(self) -> Iterator[tuple[str, Spec]]:
+        yield from (
+            (name, Spec.normalized(spec)) for (name, spec) in self.constraints.items()
+        )

@@ -1,5 +1,3 @@
-import pprint
-
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
@@ -71,13 +69,7 @@ def test_parse_complete_case(
     assert project.filename == toml
     assert project.directory == toml.parent
 
-    contents = pprint.pformat(project)
-    contents = contents.replace(
-        str(devenv_tester.projects_path.as_posix()), "<TMP_PATH>"
-    )
-    contents = contents.replace("WindowsPath(", "Path(")
-    contents = contents.replace("PosixPath(", "Path(")
-    file_regression.check(contents)
+    file_regression.check(devenv_tester.pprint_for_regression(project))
 
 
 def test_environment_error(devenv_tester: DevEnvTester) -> None:
