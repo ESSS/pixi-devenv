@@ -59,25 +59,17 @@ EnvVarValue = Union[str, tuple[str, ...]]
 @dataclass
 class Aspect:
     dependencies: dict[str, Spec | str] = serde.field(default_factory=dict)
-    pypi_dependencies: dict[str, Spec | str] = serde.field(
-        rename="pypi-dependencies", default_factory=dict
-    )
+    pypi_dependencies: dict[str, Spec | str] = serde.field(rename="pypi-dependencies", default_factory=dict)
     constraints: dict[str, Spec | str] = serde.field(default_factory=dict)
-    env_vars: dict[str, EnvVarValue] = serde.field(
-        rename="env-vars", default_factory=dict
-    )
+    env_vars: dict[str, EnvVarValue] = serde.field(rename="env-vars", default_factory=dict)
 
 
 @serde.serde(tagging=serde.Untagged)
 class Feature:
     dependencies: dict[str, Spec | str] = serde.field(default_factory=dict)
-    pypi_dependencies: dict[str, Spec | str] = serde.field(
-        rename="pypi-dependencies", default_factory=dict
-    )
+    pypi_dependencies: dict[str, Spec | str] = serde.field(rename="pypi-dependencies", default_factory=dict)
     constraints: dict[str, Spec | str] = serde.field(default_factory=dict)
-    env_vars: dict[str, EnvVarValue] = serde.field(
-        rename="env-vars", default_factory=dict
-    )
+    env_vars: dict[str, EnvVarValue] = serde.field(rename="env-vars", default_factory=dict)
     target: dict[str, Aspect] = serde.field(default_factory=dict)
 
 
@@ -91,21 +83,21 @@ class IncludeExclude:
 @dataclass
 class Inheritance:
     dependencies: bool | IncludeExclude = True
-    pypi_dependencies: bool | IncludeExclude = serde.field(
-        rename="pypi-dependencies", default=True
-    )
+    pypi_dependencies: bool | IncludeExclude = serde.field(rename="pypi-dependencies", default=True)
     env_vars: bool | IncludeExclude = serde.field(rename="env-vars", default=True)
     features: dict[str, bool | IncludeExclude] = serde.field(default_factory=dict)
 
     def use_dependencies(self, name: ProjectName) -> bool:
-        return self._evaluate_include_exclude_for_project(self.dependencies, name)
+        return self._evaluate_for_project(self.dependencies, name)
 
     def use_pypi_dependencies(self, name: ProjectName) -> bool:
-        return self._evaluate_include_exclude_for_project(self.pypi_dependencies, name)
+        return self._evaluate_for_project(self.pypi_dependencies, name)
 
-    def _evaluate_include_exclude_for_project(
-        self, include_exclude: bool | IncludeExclude, name: ProjectName
-    ) -> bool:
+    def use_env_vars(self, name: ProjectName) -> bool:
+        return self._evaluate_for_project(self.env_vars, name)
+
+    @staticmethod
+    def _evaluate_for_project(include_exclude: bool | IncludeExclude, name: ProjectName) -> bool:
         match include_exclude:
             case IncludeExclude() as inc:
                 result = True
@@ -132,13 +124,9 @@ class Project:
 
     upstream: tuple[str | Upstream, ...] = ()
     dependencies: dict[str, Spec | str] = serde.field(default_factory=dict)
-    pypi_dependencies: dict[str, Spec | str] = serde.field(
-        rename="pypi-dependencies", default_factory=dict
-    )
+    pypi_dependencies: dict[str, Spec | str] = serde.field(rename="pypi-dependencies", default_factory=dict)
     constraints: dict[str, Spec | str] = serde.field(default_factory=dict)
-    env_vars: dict[str, EnvVarValue] = serde.field(
-        rename="env-vars", default_factory=dict
-    )
+    env_vars: dict[str, EnvVarValue] = serde.field(rename="env-vars", default_factory=dict)
     target: dict[str, Aspect] = serde.field(default_factory=dict)
     feature: dict[str, Feature] = serde.field(default_factory=dict)
     inherit: Inheritance = serde.field(default_factory=Inheritance)
@@ -173,17 +161,10 @@ class Project:
         yield from (Upstream.normalized(x) for x in self.upstream)
 
     def iter_dependencies(self) -> Iterator[tuple[str, Spec]]:
-        yield from (
-            (name, Spec.normalized(spec)) for (name, spec) in self.dependencies.items()
-        )
+        yield from ((name, Spec.normalized(spec)) for (name, spec) in self.dependencies.items())
 
     def iter_pypi_dependencies(self) -> Iterator[tuple[str, Spec]]:
-        yield from (
-            (name, Spec.normalized(spec))
-            for (name, spec) in self.pypi_dependencies.items()
-        )
+        yield from ((name, Spec.normalized(spec)) for (name, spec) in self.pypi_dependencies.items())
 
     def iter_constraints(self) -> Iterator[tuple[str, Spec]]:
-        yield from (
-            (name, Spec.normalized(spec)) for (name, spec) in self.constraints.items()
-        )
+        yield from ((name, Spec.normalized(spec)) for (name, spec) in self.constraints.items())

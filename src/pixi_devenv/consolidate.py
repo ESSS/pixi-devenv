@@ -7,6 +7,15 @@ from pixi_devenv.project import Project, Spec, ProjectName, EnvVarValue, DevEnvE
 from pixi_devenv.workspace import Workspace
 
 
+def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
+    dependencies, pypi_dependencies = _consolidate_dependencies(workspace)
+    return ConsolidatedProject(
+        name=workspace.starting_project.name,
+        dependencies=dependencies,
+        pypi_dependencies=pypi_dependencies,
+    )
+
+
 @dataclass
 class ConsolidatedProject:
     name: str
@@ -26,9 +35,7 @@ class MergedSpec:
     sources: Sources
     spec: Spec
 
-    def add(
-        self, spec_name: str, sources: ProjectName | tuple[ProjectName, ...], spec: Spec
-    ) -> MergedSpec:
+    def add(self, spec_name: str, sources: ProjectName | tuple[ProjectName, ...], spec: Spec) -> MergedSpec:
         if self.spec.version != "*" and spec.version != "*":
             version = f"{self.spec.version},{spec.version}"
         elif self.spec.version != "*":
@@ -77,15 +84,6 @@ class ConsolidatedFeature:
     target: dict[str, ConsolidatedAspect] | None = None
 
 
-def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
-    dependencies, pypi_dependencies = _consolidate_dependencies(workspace)
-    return ConsolidatedProject(
-        name=workspace.starting_project.name,
-        dependencies=dependencies,
-        pypi_dependencies=pypi_dependencies,
-    )
-
-
 def _consolidate_dependencies(
     workspace: Workspace,
 ) -> tuple[dict[str, MergedSpec], dict[str, MergedSpec]]:
@@ -101,9 +99,7 @@ def _consolidate_dependencies(
             except KeyError:
                 merged_spec = MergedSpec((project.name,), spec)
                 if constraint := constraints.get(name):
-                    merged_spec = merged_spec.add(
-                        name, constraint.sources, constraint.spec
-                    )
+                    merged_spec = merged_spec.add(name, constraint.sources, constraint.spec)
                 dependencies_dict[name] = merged_spec
 
     constraints: dict[str, MergedSpec] = {}
@@ -120,15 +116,9 @@ def _consolidate_dependencies(
     pypi_dependencies: dict[str, MergedSpec] = {}
 
     for project in workspace.iter_downstream():
-        if (
-            starting_project.inherit.use_dependencies(project.name)
-            or project is starting_project
-        ):
+        if starting_project.inherit.use_dependencies(project.name) or project is starting_project:
             update_specs(project, dependencies, project.iter_dependencies())
-        if (
-            starting_project.inherit.use_pypi_dependencies(project.name)
-            or project is starting_project
-        ):
+        if starting_project.inherit.use_pypi_dependencies(project.name) or project is starting_project:
             update_specs(project, pypi_dependencies, project.iter_pypi_dependencies())
 
     return dependencies, pypi_dependencies

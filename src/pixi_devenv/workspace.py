@@ -49,6 +49,4 @@ class Workspace:
         yield from (self.projects[p] for p in self._upstream_to_downstream_order)
 
     def iter_upstream(self) -> Iterator[Project]:
-        yield from (
-            self.projects[p] for p in reversed(self._upstream_to_downstream_order)
-        )
+        yield from (self.projects[p] for p in reversed(self._upstream_to_downstream_order))

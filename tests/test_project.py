@@ -5,9 +5,7 @@ from pixi_devenv.project import Project, DevEnvError
 from tests.devenv_tester import DevEnvTester
 
 
-def test_parse_complete_case(
-    devenv_tester: DevEnvTester, file_regression: FileRegressionFixture
-) -> None:
+def test_parse_complete_case(devenv_tester: DevEnvTester, file_regression: FileRegressionFixture) -> None:
     contents = """
     [devenv]
     upstream = [

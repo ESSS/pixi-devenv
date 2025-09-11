@@ -29,9 +29,7 @@ def test_merged_spec() -> None:
     assert m.add("lib", ProjectName("b"), Spec(">=13.2", build="b1")) == MergedSpec(
         (ProjectName("a"), ProjectName("b")), Spec(">=12.0,>=13.2", build="b1")
     )
-    assert m.add(
-        "lib", ProjectName("b"), Spec(">=13.2", channel="conda-forge")
-    ) == MergedSpec(
+    assert m.add("lib", ProjectName("b"), Spec(">=13.2", channel="conda-forge")) == MergedSpec(
         (ProjectName("a"), ProjectName("b")),
         Spec(">=12.0,>=13.2", channel="conda-forge"),
     )
@@ -59,9 +57,7 @@ def test_merged_spec() -> None:
         _ = m2.add("lib", ProjectName("b"), Spec(">=13.2", channel="ch99"))
 
 
-def test_dependencies(
-    devenv_tester: DevEnvTester, file_regression: FileRegressionFixture
-) -> None:
+def test_dependencies(devenv_tester: DevEnvTester, file_regression: FileRegressionFixture) -> None:
     devenv_tester.write_devenv(
         "bootstrap",
         """
