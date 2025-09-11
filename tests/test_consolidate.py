@@ -202,3 +202,61 @@ def test_dependencies_inheritance(
         devenv_tester.pprint_for_regression(project),
         basename=f"{request.node.name}_bootstrap_inheritance",
     )
+
+
+def test_env_vars(
+    devenv_tester: DevEnvTester, file_regression: FileRegressionFixture, request: pytest.FixtureRequest
+) -> None:
+    devenv_tester.write_devenv(
+        "bootstrap",
+        """
+        [devenv.env-vars]
+        CONDA_PY = "310"
+        DOCS = "{devenv_project_dir}/bootstrap-docs"
+        PYTHONPATH = ["{devenv_project_dir}/src"]
+        """,
+    )
+    devenv_tester.write_devenv(
+        "a",
+        """
+        devenv.upstream = ["../bootstrap"]
+        [devenv.env-vars]
+        PYTHONPATH = ["{devenv_project_dir}/src", "{devenv_project_dir}/artifacts-$CONDA_PY"]
+        """,
+    )
+    b_toml = devenv_tester.write_devenv(
+        "b",
+        """
+        devenv.upstream = ["../a"]
+
+        [devenv.env-vars]
+        PYTHONPATH = ["{devenv_project_dir}/src"]
+        DOCS = "{devenv_project_dir}/b-docs"
+        README = "{devenv_project_dir}/README.md"
+        """,
+    )
+    ws = Workspace.from_starting_file(b_toml)
+    project = consolidate_devenv(ws)
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project),
+        basename=f"{request.node.name}",
+    )
+
+    c_toml = devenv_tester.write_devenv(
+        "c",
+        """
+        devenv.upstream = ["../b"]
+
+        [devenv.env-vars]
+        PYTHONPATH = ["{devenv_project_dir}/src"]
+        
+        [devenv.inherit]
+        env-vars.exclude = ["a", "b"]
+        """,
+    )
+    ws = Workspace.from_starting_file(c_toml)
+    project = consolidate_devenv(ws)
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project),
+        basename=f"{request.node.name}_no_inheritance",
+    )

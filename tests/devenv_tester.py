@@ -14,7 +14,7 @@ class DevEnvTester:
         return toml
 
     def pprint_for_regression(self, obj: object) -> str:
-        contents = pprint.pformat(obj)
+        contents = pprint.pformat(obj, sort_dicts=False)
         contents = contents.replace(str(self.projects_path.as_posix()), "<TMP_PATH>")
         contents = contents.replace("WindowsPath(", "Path(")
         contents = contents.replace("PosixPath(", "Path(")

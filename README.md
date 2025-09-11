@@ -165,8 +165,8 @@ They will be added to the versions specifiers of the section *if* a downstream p
 ```toml
 [devenv.env-vars]
 # Lists are prepended to existing variable of same name, with the appropriate joiner for the platform (':' on Linux, ';' on Windows).
-# {{ project_dir }} is replaced by the project directory.
-PYTHONPATH = ['{{ project_dir }}/src']
+# $project_dir is replaced by the project directory.
+PYTHONPATH = ['$project_dir/src']
 
 # Alternatives where it is possible to control if prepend or append.
 # PYTHONPATH.append = ['{{ project_dir }}/src']

@@ -1,18 +1,56 @@
 from __future__ import annotations
 
+import os
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from enum import Enum, auto
+from pathlib import PurePath, Path
+from typing import assert_never
 
 from pixi_devenv.project import Project, Spec, ProjectName, EnvVarValue, DevEnvError
 from pixi_devenv.workspace import Workspace
 
 
+class Shell(Enum):
+    Cmd = auto()
+    Bash = auto()
+
+    def env_var(self, name: str) -> str:
+        match self:
+            case Shell.Cmd:
+                return f"%{name}%"
+            case Shell.Bash:
+                return f"${{{name}}}"
+            case unreachable:
+                assert_never(unreachable)
+
+    def define_keyword(self) -> str:
+        match self:
+            case Shell.Cmd:
+                return "set"
+            case Shell.Bash:
+                return "export"
+            case unreachable:
+                assert_never(unreachable)
+
+    def path_separator(self) -> str:
+        match self:
+            case Shell.Cmd:
+                return ";"
+            case Shell.Bash:
+                return ":"
+            case unreachable:
+                assert_never(unreachable)
+
+
 def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
     dependencies, pypi_dependencies = _consolidate_dependencies(workspace)
+    env_vars = _consolidate_env_vars(workspace)
     return ConsolidatedProject(
         name=workspace.starting_project.name,
         dependencies=dependencies,
         pypi_dependencies=pypi_dependencies,
+        env_vars=env_vars,
     )
 
 
@@ -65,9 +103,52 @@ class MergedSpec:
 
 
 @dataclass(frozen=True)
+class ResolvedEnvVar:
+    value: EnvVarValue
+
+    @classmethod
+    def resolve(cls, project: Project, ws: Workspace, value: EnvVarValue) -> ResolvedEnvVar:
+        relative = project.directory.relative_to(ws.starting_project.directory)
+        normalized = Path(os.path.normpath(relative))
+        mapping = {
+            "devenv_project_dir": PurePath("${PIXI_PROJECT_DIR}", normalized).as_posix(),
+        }
+
+        def replace_devenv_vars(s: str) -> str:
+            return s.format(**mapping)
+
+        match value:
+            case str() as single_value:
+                return ResolvedEnvVar(replace_devenv_vars(single_value))
+            case tuple() as values:
+                return ResolvedEnvVar(tuple(replace_devenv_vars(x) for x in values))
+            case unreachable:
+                assert_never(unreachable)
+
+
+@dataclass(frozen=True)
 class MergedEnvVarValue:
     sources: Sources
-    var: EnvVarValue
+    var: ResolvedEnvVar
+
+    def merge(self, other: MergedEnvVarValue) -> MergedEnvVarValue:
+        sources = self.sources + other.sources
+        match other.var.value:
+            case str():
+                if not isinstance(self.var.value, str):
+                    raise DevEnvError(
+                        f"Incompatible env-var definition, they should have the same type: {other.var.value!r} vs {self.var.value!r}"
+                    )
+                return MergedEnvVarValue(sources=sources, var=other.var)
+            case tuple():
+                if not isinstance(self.var.value, tuple):
+                    raise DevEnvError(
+                        f"Incompatible env-var definition, they should have the same type: {other.var.value!r} vs {self.var.value!r}"
+                    )
+                new_values = ResolvedEnvVar(self.var.value + other.var.value)
+                return MergedEnvVarValue(sources=sources, var=new_values)
+            case unreachable:
+                assert_never(unreachable)
 
 
 @dataclass
@@ -122,3 +203,24 @@ def _consolidate_dependencies(
             update_specs(project, pypi_dependencies, project.iter_pypi_dependencies())
 
     return dependencies, pypi_dependencies
+
+
+def _consolidate_env_vars(workspace: Workspace) -> dict[str, MergedEnvVarValue]:
+    result: dict[str, MergedEnvVarValue] = {}
+
+    starting_project = workspace.starting_project
+
+    for project in workspace.iter_downstream():
+        if not starting_project.inherit.use_env_vars(project.name):
+            continue
+        if project.inherit.use_env_vars(project.name):
+            for name, env_var in project.env_vars.items():
+                evaluated_env_var = ResolvedEnvVar.resolve(project, workspace, env_var)
+                merged = MergedEnvVarValue(sources=(project.name,), var=evaluated_env_var)
+                try:
+                    evaluated = result[name]
+                    result[name] = evaluated.merge(merged)
+                except KeyError:
+                    result[name] = merged
+
+    return result
