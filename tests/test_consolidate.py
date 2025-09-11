@@ -260,3 +260,69 @@ def test_env_vars(
         devenv_tester.pprint_for_regression(project),
         basename=f"{request.node.name}_no_inheritance",
     )
+
+
+def test_targets(
+    devenv_tester: DevEnvTester, file_regression: FileRegressionFixture, request: pytest.FixtureRequest
+) -> None:
+    devenv_tester.write_devenv(
+        "bootstrap",
+        """
+        [devenv.target.win]        
+        dependencies = { pywin32 = "*" }
+        env-vars = { PLATFORM = "windows", MYPYPATH = ["{devenv_project_dir}/src"] }
+        
+        [devenv.target.linux-64]
+        dependencies = { sysftcl = "*" }
+        env-vars = { PLATFORM = "linux64" }  
+        """,
+    )
+    devenv_tester.write_devenv(
+        "a",
+        """
+        devenv.upstream = ["../bootstrap"]
+        
+        [devenv.target.unix]
+        pypi-dependencies = { file-lock = "*" }
+        env-vars = { LOCK_MODE = "fs" } 
+        """,
+    )
+    b_toml = devenv_tester.write_devenv(
+        "b",
+        """
+        devenv.upstream = ["../a"]
+
+        [devenv.target.win]
+        env-vars = { MYPYPATH = ["{devenv_project_dir}/src"] }
+
+        [devenv.target.unix]
+        pypi-dependencies = { pthread = "*" }
+        env-vars = { PARALLEL_MODE = "threads" } 
+        """,
+    )
+    ws = Workspace.from_starting_file(b_toml)
+    project = consolidate_devenv(ws)
+    file_regression.check(devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}")
+
+    b_toml = devenv_tester.write_devenv(
+        "b",
+        """
+        devenv.upstream = ["../a"]
+
+        [devenv.target.win]
+        env-vars = { MYPYPATH = ["{devenv_project_dir}/src"] }
+
+        [devenv.target.unix]
+        pypi-dependencies = { pthread = "*" }
+        env-vars = { PARALLEL_MODE = "threads" }
+        
+        [devenv.inherit]
+        dependencies = false
+        env-vars.include = ["bootstrap"] 
+        """,
+    )
+    ws = Workspace.from_starting_file(b_toml)
+    project = consolidate_devenv(ws)
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_inheritance"
+    )

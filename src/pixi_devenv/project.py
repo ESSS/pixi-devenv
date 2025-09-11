@@ -75,12 +75,12 @@ class Feature:
 
 @serde.serde(tagging=serde.Untagged)
 class Include:
-    include: tuple[str, ...]
+    include: tuple[ProjectName, ...]
 
 
 @serde.serde(tagging=serde.Untagged)
 class Exclude:
-    exclude: tuple[str, ...]
+    exclude: tuple[ProjectName, ...]
 
 
 @serde.serde(tagging=serde.Untagged)
@@ -91,17 +91,21 @@ class Inheritance:
     env_vars: bool | Include | Exclude = serde.field(rename="env-vars", default=True)
     features: dict[str, bool | Include | Exclude] = serde.field(default_factory=dict)
 
-    def use_dependencies(self, name: ProjectName) -> bool:
-        return self._evaluate_for_project(self.dependencies, name)
+    def use_dependencies(self, name: ProjectName, starting_project: Project) -> bool:
+        return self._evaluate_for_project(self.dependencies, name, starting_project)
 
-    def use_pypi_dependencies(self, name: ProjectName) -> bool:
-        return self._evaluate_for_project(self.pypi_dependencies, name)
+    def use_pypi_dependencies(self, name: ProjectName, starting_project: Project) -> bool:
+        return self._evaluate_for_project(self.pypi_dependencies, name, starting_project)
 
-    def use_env_vars(self, name: ProjectName) -> bool:
-        return self._evaluate_for_project(self.env_vars, name)
+    def use_env_vars(self, name: ProjectName, starting_project: Project) -> bool:
+        return self._evaluate_for_project(self.env_vars, name, starting_project)
 
     @staticmethod
-    def _evaluate_for_project(include_exclude: bool | Include | Exclude, name: ProjectName) -> bool:
+    def _evaluate_for_project(
+        include_exclude: bool | Include | Exclude, name: ProjectName, starting_project: Project
+    ) -> bool:
+        if name == starting_project.name:
+            return True
         match include_exclude:
             case Include(include):
                 return name in include
@@ -161,11 +165,10 @@ class Project:
     def iter_upstream(self) -> Iterator[Upstream]:
         yield from (Upstream.normalized(x) for x in self.upstream)
 
-    def iter_dependencies(self) -> Iterator[tuple[str, Spec]]:
-        yield from ((name, Spec.normalized(spec)) for (name, spec) in self.dependencies.items())
-
-    def iter_pypi_dependencies(self) -> Iterator[tuple[str, Spec]]:
-        yield from ((name, Spec.normalized(spec)) for (name, spec) in self.pypi_dependencies.items())
-
-    def iter_constraints(self) -> Iterator[tuple[str, Spec]]:
-        yield from ((name, Spec.normalized(spec)) for (name, spec) in self.constraints.items())
+    def get_root_aspect(self) -> Aspect:
+        return Aspect(
+            dependencies=self.dependencies,
+            pypi_dependencies=self.pypi_dependencies,
+            constraints=self.constraints,
+            env_vars=self.env_vars,
+        )

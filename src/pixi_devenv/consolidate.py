@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import os
+from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import PurePath, Path
-from typing import assert_never
+from typing import assert_never, Sequence
 
-from pixi_devenv.project import Project, Spec, ProjectName, EnvVarValue, DevEnvError
+from pixi_devenv.project import Project, Spec, ProjectName, EnvVarValue, DevEnvError, Aspect
 from pixi_devenv.workspace import Workspace
 
 
@@ -44,13 +45,26 @@ class Shell(Enum):
 
 
 def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
-    dependencies, pypi_dependencies = _consolidate_dependencies(workspace)
-    env_vars = _consolidate_env_vars(workspace)
+    root_aspect = _consolidate_aspects(
+        workspace, [(p, p.get_root_aspect()) for p in workspace.iter_downstream()]
+    )
+
+    all_targets = defaultdict[str, list[Project]](list)
+    for project in workspace.iter_downstream():
+        for target_name in project.target:
+            all_targets[target_name].append(project)
+
+    consolidated_target = dict[str, ConsolidatedAspect]()
+    for target_name, projects in all_targets.items():
+        aspect = _consolidate_aspects(workspace, [(p, p.target[target_name]) for p in projects])
+        consolidated_target[target_name] = aspect
+
     return ConsolidatedProject(
         name=workspace.starting_project.name,
-        dependencies=dependencies,
-        pypi_dependencies=pypi_dependencies,
-        env_vars=env_vars,
+        dependencies=root_aspect.dependencies,
+        pypi_dependencies=root_aspect.pypi_dependencies,
+        env_vars=root_aspect.env_vars,
+        target=consolidated_target,
     )
 
 
@@ -153,21 +167,22 @@ class MergedEnvVarValue:
 
 @dataclass
 class ConsolidatedAspect:
-    dependencies: dict[str, MergedSpec] | None = None
-    pypi_dependencies: dict[str, MergedSpec] | None = None
-    env_vars: dict[str, MergedEnvVarValue] | None = None
+    dependencies: dict[str, MergedSpec]
+    pypi_dependencies: dict[str, MergedSpec]
+    env_vars: dict[str, MergedEnvVarValue]
 
 
 class ConsolidatedFeature:
-    dependencies: dict[str, MergedSpec] | None = None
-    pypi_dependencies: dict[str, MergedSpec] | None = None
-    env_vars: dict[str, MergedEnvVarValue] | None = None
-    target: dict[str, ConsolidatedAspect] | None = None
+    dependencies: dict[str, MergedSpec]
+    pypi_dependencies: dict[str, MergedSpec]
+    env_vars: dict[str, MergedEnvVarValue]
+    target: dict[str, ConsolidatedAspect]
 
 
-def _consolidate_dependencies(
+def _consolidate_aspects(
     workspace: Workspace,
-) -> tuple[dict[str, MergedSpec], dict[str, MergedSpec]]:
+    aspects: Sequence[tuple[Project, Aspect]],
+) -> ConsolidatedAspect:
     def update_specs(
         project: Project,
         dependencies_dict: dict[str, MergedSpec],
@@ -186,41 +201,47 @@ def _consolidate_dependencies(
     constraints: dict[str, MergedSpec] = {}
 
     starting_project = workspace.starting_project
+    inherit = starting_project.inherit
 
-    for project in workspace.iter_downstream():
-        if starting_project.inherit.use_dependencies(
-            project.name
-        ) or starting_project.inherit.use_pypi_dependencies(project.name):
-            update_specs(project, constraints, project.iter_constraints())
+    for project, aspect in aspects:
+        inherit_this_constraints = inherit.use_dependencies(
+            project.name, starting_project
+        ) or inherit.use_pypi_dependencies(project.name, starting_project)
+        if inherit_this_constraints:
+            update_specs(
+                project, constraints, ((n, Spec.normalized(s)) for (n, s) in aspect.constraints.items())
+            )
 
     dependencies: dict[str, MergedSpec] = {}
     pypi_dependencies: dict[str, MergedSpec] = {}
 
-    for project in workspace.iter_downstream():
-        if starting_project.inherit.use_dependencies(project.name) or project is starting_project:
-            update_specs(project, dependencies, project.iter_dependencies())
-        if starting_project.inherit.use_pypi_dependencies(project.name) or project is starting_project:
-            update_specs(project, pypi_dependencies, project.iter_pypi_dependencies())
+    for project, aspect in aspects:
+        if inherit.use_dependencies(project.name, starting_project):
+            update_specs(
+                project, dependencies, ((n, Spec.normalized(s)) for (n, s) in aspect.dependencies.items())
+            )
+        if inherit.use_pypi_dependencies(project.name, starting_project):
+            update_specs(
+                project,
+                pypi_dependencies,
+                ((n, Spec.normalized(s)) for (n, s) in aspect.pypi_dependencies.items()),
+            )
 
-    return dependencies, pypi_dependencies
+    result_env_vars: dict[str, MergedEnvVarValue] = {}
 
-
-def _consolidate_env_vars(workspace: Workspace) -> dict[str, MergedEnvVarValue]:
-    result: dict[str, MergedEnvVarValue] = {}
-
-    starting_project = workspace.starting_project
-
-    for project in workspace.iter_downstream():
-        if not starting_project.inherit.use_env_vars(project.name):
+    for project, aspect in aspects:
+        if not inherit.use_env_vars(project.name, starting_project):
             continue
-        if project.inherit.use_env_vars(project.name):
-            for name, env_var in project.env_vars.items():
-                evaluated_env_var = ResolvedEnvVar.resolve(project, workspace, env_var)
-                merged = MergedEnvVarValue(sources=(project.name,), var=evaluated_env_var)
-                try:
-                    evaluated = result[name]
-                    result[name] = evaluated.merge(merged)
-                except KeyError:
-                    result[name] = merged
 
-    return result
+        for name, env_var in aspect.env_vars.items():
+            evaluated_env_var = ResolvedEnvVar.resolve(project, workspace, env_var)
+            merged = MergedEnvVarValue(sources=(project.name,), var=evaluated_env_var)
+            try:
+                evaluated = result_env_vars[name]
+                result_env_vars[name] = evaluated.merge(merged)
+            except KeyError:
+                result_env_vars[name] = merged
+
+    return ConsolidatedAspect(
+        dependencies=dependencies, pypi_dependencies=pypi_dependencies, env_vars=result_env_vars
+    )
