@@ -17,12 +17,12 @@ def test_parse_complete_case(
     
     [devenv.inherit]
     dependencies = false
-    pypi-dependencies = ["core"]
-    env-vars = ["core"]
+    pypi-dependencies.exclude = ["core"]
+    env-vars.include = ["core"]
     
     [devenv.inherit.features]
     py310 = true
-    py310-test = ["core"]
+    py310-test.include = ["core"]
     
     [devenv.dependencies]
     boltons = "*"

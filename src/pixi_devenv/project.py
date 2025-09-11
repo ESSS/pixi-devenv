@@ -82,30 +82,40 @@ class Feature:
 
 
 @serde.serde(tagging=serde.Untagged)
+class IncludeExclude:
+    include: tuple[str, ...] | None = ()
+    exclude: tuple[str, ...] | None = ()
+
+
+@serde.serde(tagging=serde.Untagged)
 @dataclass
 class Inheritance:
-    dependencies: bool | tuple[str, ...] = True
-    pypi_dependencies: bool | tuple[str, ...] = serde.field(
+    dependencies: bool | IncludeExclude = True
+    pypi_dependencies: bool | IncludeExclude = serde.field(
         rename="pypi-dependencies", default=True
     )
-    env_vars: bool | tuple[str, ...] = serde.field(rename="env-vars", default=True)
-    features: dict[str, bool | tuple[str, ...]] = serde.field(default_factory=dict)
+    env_vars: bool | IncludeExclude = serde.field(rename="env-vars", default=True)
+    features: dict[str, bool | IncludeExclude] = serde.field(default_factory=dict)
 
     def use_dependencies(self, name: ProjectName) -> bool:
-        match self.dependencies:
-            case bool():
-                return self.dependencies
-            case tuple() as names:
-                return name in names
-            case unreachable:
-                assert_never(unreachable)
+        return self._evaluate_include_exclude_for_project(self.dependencies, name)
 
     def use_pypi_dependencies(self, name: ProjectName) -> bool:
-        match self.pypi_dependencies:
-            case bool():
-                return self.pypi_dependencies
-            case tuple() as names:
-                return name in names
+        return self._evaluate_include_exclude_for_project(self.pypi_dependencies, name)
+
+    def _evaluate_include_exclude_for_project(
+        self, include_exclude: bool | IncludeExclude, name: ProjectName
+    ) -> bool:
+        match include_exclude:
+            case IncludeExclude() as inc:
+                result = True
+                if inc.include is not None:
+                    result = name in inc.include
+                if inc.exclude is not None:
+                    result = name not in inc.exclude
+                return result
+            case bool() as include:
+                return include
             case unreachable:
                 assert_never(unreachable)
 

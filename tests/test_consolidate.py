@@ -148,43 +148,59 @@ def test_dependencies_inheritance(
         fast-api = "*"
         """,
     )
-    b_toml = devenv_tester.write_devenv(
+    devenv_tester.write_devenv(
         "b",
         """
         devenv.upstream = ["../a"]
 
         [devenv.dependencies]
         coverage = "21.0"
-        
+
+        [devenv.pypi-dependencies]
+        flask = "*"
+        """,
+    )
+
+    c_toml = devenv_tester.write_devenv(
+        "c",
+        """
+        devenv.upstream = ["../b"]
+
+        [devenv.dependencies]
+        pillow = "21.0"
+
+        [devenv.pypi-dependencies]
+        pytest-mock = "*"
+
         [devenv.inherit]
         dependencies = false
         pypi-dependencies = false
         """,
     )
-    ws = Workspace.from_starting_file(b_toml)
+    ws = Workspace.from_starting_file(c_toml)
     project = consolidate_devenv(ws)
     file_regression.check(
         devenv_tester.pprint_for_regression(project),
         basename=f"{request.node.name}_no_inheritance",
     )
 
-    b_toml = devenv_tester.write_devenv(
-        "b",
+    c_toml = devenv_tester.write_devenv(
+        "c",
         """
-        devenv.upstream = ["../a"]
+        devenv.upstream = ["../b"]
 
         [devenv.dependencies]
-        coverage = "21.0"
-        
+        pillow = "21.0"
+
         [devenv.pypi-dependencies]
-        flask = "*"
+        pytest-mock = "*"
 
         [devenv.inherit]
-        dependencies = ["bootstrap"]
-        pypi-dependencies = ["bootstrap"]
+        dependencies = true
+        pypi-dependencies.exclude = ["a"]
         """,
     )
-    ws = Workspace.from_starting_file(b_toml)
+    ws = Workspace.from_starting_file(c_toml)
     project = consolidate_devenv(ws)
     file_regression.check(
         devenv_tester.pprint_for_regression(project),
