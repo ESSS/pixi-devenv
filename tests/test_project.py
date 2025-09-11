@@ -20,7 +20,7 @@ def test_parse_complete_case(devenv_tester: DevEnvTester, file_regression: FileR
     
     [devenv.inherit.features]
     py310 = true
-    py310-test.include = ["core"]
+    py310-test.exclude = ["core"]
     
     [devenv.dependencies]
     boltons = "*"

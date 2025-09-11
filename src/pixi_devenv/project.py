@@ -74,18 +74,22 @@ class Feature:
 
 
 @serde.serde(tagging=serde.Untagged)
-class IncludeExclude:
-    include: tuple[str, ...] | None = ()
-    exclude: tuple[str, ...] | None = ()
+class Include:
+    include: tuple[str, ...]
+
+
+@serde.serde(tagging=serde.Untagged)
+class Exclude:
+    exclude: tuple[str, ...]
 
 
 @serde.serde(tagging=serde.Untagged)
 @dataclass
 class Inheritance:
-    dependencies: bool | IncludeExclude = True
-    pypi_dependencies: bool | IncludeExclude = serde.field(rename="pypi-dependencies", default=True)
-    env_vars: bool | IncludeExclude = serde.field(rename="env-vars", default=True)
-    features: dict[str, bool | IncludeExclude] = serde.field(default_factory=dict)
+    dependencies: bool | Include | Exclude = True
+    pypi_dependencies: bool | Include | Exclude = serde.field(rename="pypi-dependencies", default=True)
+    env_vars: bool | Include | Exclude = serde.field(rename="env-vars", default=True)
+    features: dict[str, bool | Include | Exclude] = serde.field(default_factory=dict)
 
     def use_dependencies(self, name: ProjectName) -> bool:
         return self._evaluate_for_project(self.dependencies, name)
@@ -97,15 +101,12 @@ class Inheritance:
         return self._evaluate_for_project(self.env_vars, name)
 
     @staticmethod
-    def _evaluate_for_project(include_exclude: bool | IncludeExclude, name: ProjectName) -> bool:
+    def _evaluate_for_project(include_exclude: bool | Include | Exclude, name: ProjectName) -> bool:
         match include_exclude:
-            case IncludeExclude() as inc:
-                result = True
-                if inc.include is not None:
-                    result = name in inc.include
-                if inc.exclude is not None:
-                    result = name not in inc.exclude
-                return result
+            case Include(include):
+                return name in include
+            case Exclude(exclude):
+                return name not in exclude
             case bool() as include:
                 return include
             case unreachable:
