@@ -326,3 +326,89 @@ def test_targets(
     file_regression.check(
         devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_inheritance"
     )
+
+
+def test_features(
+    devenv_tester: DevEnvTester, file_regression: FileRegressionFixture, request: pytest.FixtureRequest
+) -> None:
+    devenv_tester.write_devenv(
+        "bootstrap",
+        """
+        [devenv.feature.py310]        
+        dependencies = { python = "3.10.*" }
+        env-vars = { CONDA_PY = "310" }
+        
+        [devenv.feature.py310.target.windows]        
+        dependencies = { pywin32 = "*" }
+        env-vars = { PLATFORM = "windows-py310" }
+        
+        [devenv.feature.py310.target.linux]        
+        env-vars = { PLATFORM = "linux-py310" }
+          
+        [devenv.feature.py312]
+        dependencies = { python = "3.12.*" }
+        env-vars = { CONDA_PY = "312" }
+        
+        [devenv.feature.py312.target.windows]        
+        dependencies = { pywin32 = "35.0" }
+        env-vars = { PLATFORM = "windows-py312" }
+        
+        [devenv.feature.py312.target.linux]        
+        env-vars = { PLATFORM = "linux-py312" }
+        
+        [devenv.feature.test]
+        dependencies = { pytest = "*" }
+        """,
+    )
+    devenv_tester.write_devenv(
+        "a",
+        """
+        devenv.upstream = ["../bootstrap"]
+
+        [devenv.feature.py310.target.windows]        
+        dependencies = { pillow = "*" }
+        env-vars = { MYPYPATH = ["{devenv_project_dir}/src"] }
+        """,
+    )
+    b_toml = devenv_tester.write_devenv(
+        "b",
+        """
+        devenv.upstream = ["../a"]
+
+        [devenv.inherit.features]
+        py310.include = ["bootstrap"]
+        py312 = true
+        """,
+    )
+    ws = Workspace.from_starting_file(b_toml)
+    project = consolidate_devenv(ws)
+    file_regression.check(devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}")
+
+    # Inherit py310 in b because we defined the feature too.
+    b_toml = devenv_tester.write_devenv(
+        "b",
+        """
+        devenv.upstream = ["../a"]        
+        
+        [devenv.feature.py310.target.windows]
+        env-vars = { MYPYPATH = ["{devenv_project_dir}/src"] } 
+        """,
+    )
+    ws = Workspace.from_starting_file(b_toml)
+    project = consolidate_devenv(ws)
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_inheritance"
+    )
+
+    # No feature inherited unless explicitly inherited or defining the feature.
+    b_toml = devenv_tester.write_devenv(
+        "b",
+        """
+        devenv.upstream = ["../a"]        
+        """,
+    )
+    ws = Workspace.from_starting_file(b_toml)
+    project = consolidate_devenv(ws)
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_no_inheritance"
+    )

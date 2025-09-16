@@ -1,0 +1,6 @@
+ConsolidatedProject(name='b',
+                    dependencies={},
+                    pypi_dependencies={},
+                    env_vars={},
+                    target={},
+                    feature={})

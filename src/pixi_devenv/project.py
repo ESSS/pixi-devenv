@@ -72,6 +72,14 @@ class Feature:
     env_vars: dict[str, EnvVarValue] = serde.field(rename="env-vars", default_factory=dict)
     target: dict[str, Aspect] = serde.field(default_factory=dict)
 
+    def get_aspect(self) -> Aspect:
+        return Aspect(
+            dependencies=self.dependencies,
+            pypi_dependencies=self.pypi_dependencies,
+            constraints=self.constraints,
+            env_vars=self.env_vars,
+        )
+
 
 @serde.serde(tagging=serde.Untagged)
 class Include:
@@ -99,6 +107,13 @@ class Inheritance:
 
     def use_env_vars(self, name: ProjectName, starting_project: Project) -> bool:
         return self._evaluate_for_project(self.env_vars, name, starting_project)
+
+    def use_feature(self, feature_name: str, project_name: ProjectName, starting_project: Project) -> bool:
+        if feature_name in starting_project.feature:
+            return True
+        if include_exclude := self.features.get(feature_name):
+            return self._evaluate_for_project(include_exclude, project_name, starting_project)
+        return False
 
     @staticmethod
     def _evaluate_for_project(
