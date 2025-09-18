@@ -39,7 +39,7 @@ def test_parse_complete_case(devenv_tester: DevEnvTester, file_regression: FileR
     vc = ">=14"
     
     [devenv.env-vars]
-    PYTHONPATH = ['{{ project_dir }}/src']
+    PYTHONPATH = ['{devenv_project_dir}/src']
     JOBS = "6"
     
     [devenv.feature.python310]

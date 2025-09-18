@@ -412,3 +412,43 @@ def test_features(
     file_regression.check(
         devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_no_inheritance"
     )
+
+
+def test_channels_and_platforms(
+    devenv_tester: DevEnvTester, file_regression: FileRegressionFixture, request: pytest.FixtureRequest
+) -> None:
+    devenv_tester.write_devenv(
+        "bootstrap",
+        """
+        [devenv]
+        channels = ["conda-forge"] 
+        platforms = ["win-64", "linux-64"] 
+        """,
+    )
+    a_toml = devenv_tester.write_devenv(
+        "a",
+        """
+        devenv.upstream = ["../bootstrap"]
+        """,
+    )
+    ws = Workspace.from_starting_file(a_toml)
+    project = consolidate_devenv(ws)
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_from_bootstrap"
+    )
+
+    a_toml = devenv_tester.write_devenv(
+        "a",
+        """
+        [devenv]
+        channels = ["company.com/channel1", "company.com/channel2"] 
+        platforms = ["linux-64"]
+        
+        upstream = ["../bootstrap"]
+        """,
+    )
+    ws = Workspace.from_starting_file(a_toml)
+    project = consolidate_devenv(ws)
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_overwrite"
+    )

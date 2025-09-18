@@ -51,6 +51,9 @@ class Spec:
             case unreachable:
                 assert_never(unreachable)
 
+    def is_version_only(self) -> bool:
+        return not self.build and not self.channel
+
 
 EnvVarValue = Union[str, tuple[str, ...]]
 
@@ -141,6 +144,9 @@ class Project:
     # `environment` exists only to raise an error if it is actually defined in the file: environments are not manipulated
     # by pixi-devenv and should be defined directly in pixi.toml.
     environments: dict[str, Any] | None = None
+
+    channels: tuple[str, ...] = ()
+    platforms: tuple[str, ...] = ()
 
     upstream: tuple[str | Upstream, ...] = ()
     dependencies: dict[str, Spec | str] = serde.field(default_factory=dict)

@@ -1,4 +1,6 @@
 ConsolidatedProject(name='b',
+                    channels=(),
+                    platforms=(),
                     dependencies={},
                     pypi_dependencies={},
                     env_vars={},

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import string
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
@@ -43,6 +44,13 @@ class Shell(Enum):
             case unreachable:
                 assert_never(unreachable)
 
+    @classmethod
+    def from_target_name(cls, target_name: str) -> Shell:
+        if target_name.startswith("win"):
+            return Shell.Cmd
+        else:
+            return Shell.Bash
+
 
 def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
     root_aspect = _consolidate_aspects(
@@ -51,8 +59,20 @@ def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
 
     consolidated_target = _consolidate_target(workspace, list(workspace.iter_downstream()))
     consolidated_feature = _consolidate_feature(workspace)
+
+    channels: tuple[str, ...] = ()
+    platforms: tuple[str, ...] = ()
+
+    for project in workspace.iter_downstream():
+        if project.channels:
+            channels = project.channels
+        if project.platforms:
+            platforms = project.platforms
+
     return ConsolidatedProject(
         name=workspace.starting_project.name,
+        channels=channels,
+        platforms=platforms,
         dependencies=root_aspect.dependencies,
         pypi_dependencies=root_aspect.pypi_dependencies,
         env_vars=root_aspect.env_vars,
@@ -64,6 +84,9 @@ def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
 @dataclass
 class ConsolidatedProject:
     name: str
+
+    channels: tuple[str, ...] = ()
+    platforms: tuple[str, ...] = ()
 
     dependencies: dict[str, MergedSpec] = field(default_factory=dict)
     pypi_dependencies: dict[str, MergedSpec] = field(default_factory=dict)
@@ -154,6 +177,24 @@ class MergedEnvVarValue:
                     )
                 new_values = ResolvedEnvVar(self.var.value + other.var.value)
                 return MergedEnvVarValue(sources=sources, var=new_values)
+            case unreachable:
+                assert_never(unreachable)
+
+    def get_generic_value(self) -> str | None:
+        match self.var.value:
+            case str(v):
+                t = string.Template(v)
+                # Without any identifiers: does not require platform-specific replacements, so it is generic.
+                if not t.get_identifiers():
+                    return v
+                else:
+                    # Requires platform-specific replacement of the variables:
+                    # "$FOO/lib" -> "${FOO}/lib" or "%FOO%/lib"
+                    return None
+            case tuple():
+                # Lists always require platform-specific versions, to join them using the appropraite
+                # path separator (':' or ';').
+                return None
             case unreachable:
                 assert_never(unreachable)
 

@@ -1,4 +1,6 @@
 ConsolidatedProject(name='c',
+                    channels=(),
+                    platforms=(),
                     dependencies={'pillow': MergedSpec(sources=('c',),
                                                        spec=Spec(version='21.0',
                                                                  build='',

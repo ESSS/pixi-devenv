@@ -1,4 +1,6 @@
 ConsolidatedProject(name='a',
+                    channels=(),
+                    platforms=(),
                     dependencies={'boltons': MergedSpec(sources=('bootstrap',
                                                                  'a'),
                                                         spec=Spec(version='24.0,>=24.2',
