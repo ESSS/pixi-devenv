@@ -45,7 +45,7 @@ class Spec:
     def normalized(cls, spec: Spec | str) -> Spec:
         match spec:
             case str() as version:
-                return Spec(version=version, build="", channel="")
+                return Spec(version=version)
             case Spec():
                 return spec
             case unreachable:

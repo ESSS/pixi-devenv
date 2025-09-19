@@ -141,7 +141,7 @@ class ResolvedEnvVar:
         relative = project.directory.relative_to(ws.starting_project.directory)
         normalized = Path(os.path.normpath(relative))
         mapping = {
-            "devenv_project_dir": PurePath("${PIXI_PROJECT_DIR}", normalized).as_posix(),
+            "devenv_project_dir": PurePath("${PIXI_PROJECT_ROOT}", normalized).as_posix(),
         }
 
         def replace_devenv_vars(s: str) -> str:

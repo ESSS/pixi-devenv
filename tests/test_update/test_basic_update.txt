@@ -9,7 +9,7 @@ default = ["py310"]
 
 [dependencies] # Managed by devenv
 boltons = "24.0,>=24.2" # From: bootstrap, a
-pyqt = {version = ">=5.15", build = "", channel = "conda-forge"} # From: a, bootstrap
+pyqt = {version = ">=5.15", channel = "conda-forge"} # From: a, bootstrap
 numpy = ">=2.0" # From: b
 
 [pypi-dependencies] # Managed by devenv
@@ -24,24 +24,24 @@ flock = "*" # From: bootstrap
 [target.unix.activation.env] # Managed by devenv
 FLOCK_MODE = "std"
 LD_LIBRARY_PATH = "${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
-MYPYPATH = "${PIXI_PROJECT_DIR}/../bootstrap/typing:${MYPYPATH}"
+MYPYPATH = "${PIXI_PROJECT_ROOT}/../bootstrap/typing:${MYPYPATH}"
 MYUSER = "${USER}"
-PYTHONPATH = "${PIXI_PROJECT_DIR}/../bootstrap/src:${PIXI_PROJECT_DIR}/../a/src:${PIXI_PROJECT_DIR}/src:${PYTHONPATH}"
+PYTHONPATH = "${PIXI_PROJECT_ROOT}/../bootstrap/src:${PIXI_PROJECT_ROOT}/../a/src:${PIXI_PROJECT_ROOT}/src:${PYTHONPATH}"
 
-[target.windows.activation.env] # Managed by devenv
+[target.win.activation.env] # Managed by devenv
 LD_LIBRARY_PATH = "%CONDA_PREFIX%/lib;%LD_LIBRARY_PATH%"
 MYUSER = "%USER%"
-PYTHONPATH = "%PIXI_PROJECT_DIR%/../bootstrap/src;%PIXI_PROJECT_DIR%/../a/src;%PIXI_PROJECT_DIR%/src;%PYTHONPATH%"
+PYTHONPATH = "%PIXI_PROJECT_ROOT%/../bootstrap/src;%PIXI_PROJECT_ROOT%/../a/src;%PIXI_PROJECT_ROOT%/src;%PYTHONPATH%"
 
-[features.py310.dependencies] # Managed by devenv
+[feature.py310.dependencies] # Managed by devenv
 python = "3.10.*" # From: bootstrap
 typing_extensions = "*" # From: bootstrap
 
-[features.py310.activation.env] # Managed by devenv
+[feature.py310.activation.env] # Managed by devenv
 CONDA_PY = "310"
 
-[features.py312.dependencies] # Managed by devenv
+[feature.py312.dependencies] # Managed by devenv
 python = "3.12.*" # From: bootstrap
 
-[features.py312.activation.env] # Managed by devenv
+[feature.py312.activation.env] # Managed by devenv
 CONDA_PY = "312"

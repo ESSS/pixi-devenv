@@ -20,7 +20,7 @@ from pixi_devenv.project import DevEnvError
 from pixi_devenv.workspace import Workspace
 
 
-def update_pixi_config(root: Path) -> None:
+def update_pixi_config(root: Path) -> bool:
     starting_file = root / "pixi.devenv.toml"
     target_file = root / "pixi.toml"
 
@@ -33,7 +33,11 @@ def update_pixi_config(root: Path) -> None:
     consolidated = consolidate_devenv(Workspace.from_starting_file(starting_file))
     contents = target_file.read_text(encoding="UTF-8")
     new_contents = _update_pixi_contents(root, contents, consolidated)
-    target_file.write_text(new_contents, encoding="UTF-8")
+    if contents != new_contents:
+        target_file.write_text(new_contents, encoding="UTF-8")
+        return True
+    else:
+        return False
 
 
 def _update_pixi_contents(root: Path, contents: str, consolidated: ConsolidatedProject) -> str:
@@ -50,7 +54,7 @@ def _update_pixi_contents(root: Path, contents: str, consolidated: ConsolidatedP
         features_table[feature_name] = tables
 
     if features_table:
-        doc["features"] = features_table
+        doc["feature"] = features_table
 
     new_contents = tomlkit.dumps(doc)
     return new_contents
@@ -96,7 +100,7 @@ def _get_project_or_feature_tables(
 
     if grouped.platform_specific:
         platform_specific_by_target["unix"] = grouped.platform_specific
-        platform_specific_by_target["windows"] = grouped.platform_specific
+        platform_specific_by_target["win"] = grouped.platform_specific
 
     if consolidated.target or grouped.platform_specific:
         for target_name, aspect in consolidated.target.items():
@@ -201,7 +205,9 @@ def _create_dependencies_table(deps: Mapping[str, MergedSpec]) -> Table | None:
         else:
             inline_table = tomlkit.inline_table()
             inline_table.comment(_MANAGED_COMMENT)
-            inline_table.update(dataclasses.asdict(merged_spec.spec))
+            # Do not output values that are empty, it does not mean the same as "*".
+            dict_spec = {k: v for (k, v) in dataclasses.asdict(merged_spec.spec).items() if v}
+            inline_table.update(dict_spec)
             result.add(name, inline_table)
         result[name].comment(f"From: {', '.join(merged_spec.sources)}")
 
