@@ -21,11 +21,11 @@ def update(path: Path | None = None) -> None:
 @app.command()
 def init() -> None:
     """Initialize pixi-devenv configuration in this directory (TODO)"""
-    print("TODO")
+    print("Coming soon")
 
 
 @app.command()
 def import_from_conda(file: str = "environment.devenv.yml", feature: str = "") -> None:
     """Import conda-devenv configuration into a pixi.devenv.toml file"""
     # 'feature' is used to import the environment.devenv.yml contents as a feature.
-    print(f"TODO {file} {feature}")
+    print(f"Coming soon ({file} {feature})")
