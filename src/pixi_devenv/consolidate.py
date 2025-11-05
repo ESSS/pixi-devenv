@@ -14,10 +14,21 @@ from pixi_devenv.workspace import Workspace
 
 
 class Shell(Enum):
+    """Abstracts the syntax differences for multiple shell scripts."""
+
     Cmd = auto()
     Bash = auto()
 
+    @classmethod
+    def from_target_name(cls, target_name: str) -> Shell:
+        """Creates an instance based on the target name used in pixi standards ('win-64', 'linux-64', etc.)."""
+        if target_name.startswith("win"):
+            return Shell.Cmd
+        else:
+            return Shell.Bash
+
     def env_var(self, name: str) -> str:
+        """Refer to an environment variable."""
         match self:
             case Shell.Cmd:
                 return f"%{name}%"
@@ -27,6 +38,7 @@ class Shell(Enum):
                 assert_never(unreachable)
 
     def define_keyword(self) -> str:
+        """Keyword to define an environment variable."""
         match self:
             case Shell.Cmd:
                 return "set"
@@ -36,6 +48,7 @@ class Shell(Enum):
                 assert_never(unreachable)
 
     def path_separator(self) -> str:
+        """Character used to separate environment variables."""
         match self:
             case Shell.Cmd:
                 return ";"
@@ -44,15 +57,12 @@ class Shell(Enum):
             case unreachable:
                 assert_never(unreachable)
 
-    @classmethod
-    def from_target_name(cls, target_name: str) -> Shell:
-        if target_name.startswith("win"):
-            return Shell.Cmd
-        else:
-            return Shell.Bash
-
 
 def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
+    """
+    Consolidates the given workspace definition, coalescing all pixi-devenv settings from the different files
+    in the workspace into a single pixi definition.
+    """
     root_aspect = _consolidate_aspects(
         workspace, [(p, p.get_root_aspect()) for p in workspace.iter_downstream()]
     )
@@ -83,6 +93,12 @@ def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
 
 @dataclass
 class ConsolidatedProject:
+    """
+    Result of consolidating all the projects in a `Workspace` in a single, final pixi.toml configuration.
+
+    This class acts as the schema that will be written as a `pixi.toml` file.
+    """
+
     name: str
 
     channels: tuple[str, ...] = ()
@@ -100,7 +116,33 @@ type Sources = tuple[ProjectName, ...]
 
 @dataclass(frozen=True)
 class MergedSpec:
+    """
+    Specs from different projects merged together.
+
+    For example, we might have project "a" with:
+
+        pytest = ">=7.2"
+
+    And downstream, project "b" with:
+
+        pytest = { version = ">=8.0", channel = "conda-forge" }
+
+    This will result in a merged spec of:
+
+        pytest = { version = ">=7.2,>=8.0", build="", channel="conda-forge" }
+
+    which will be written in the final `pixi.toml`file.
+
+    Note:
+
+    * Versions are merged together.
+    * Build and channels cannot be merged, so the downstream-most project wins.
+    """
+
+    # Track which projects contributed to the spec.
     sources: Sources
+
+    # Final merged spec.
     spec: Spec
 
     def add(self, spec_name: str, sources: ProjectName | tuple[ProjectName, ...], spec: Spec) -> MergedSpec:
@@ -134,6 +176,17 @@ class MergedSpec:
 
 @dataclass(frozen=True)
 class ResolvedEnvVar:
+    """
+    An environment variable where the pixi-devenv placeholders have been resolved.
+
+    Placeholders are strings in str-format that can appear in environment variables in pixi-devenv files
+    that will be replaced by a different value when evaluated for the final pixi.toml file.
+
+    Current placeholders are:
+
+    * `devenv_project_dir` will be replaced by the directory of the current `pixi.devenv.toml` file.
+    """
+
     value: EnvVarValue
 
     @classmethod
@@ -158,6 +211,15 @@ class ResolvedEnvVar:
 
 @dataclass(frozen=True)
 class MergedEnvVarValue:
+    """
+    Environment variables from different projects merged together.
+
+    For variables that are a single string, the downstream project wins.
+
+    For variables that are a list, the items are joined together using the correct path separator, with
+    downstream items appearing first.
+    """
+
     sources: Sources
     var: ResolvedEnvVar
 
@@ -201,6 +263,10 @@ class MergedEnvVarValue:
 
 @dataclass
 class ConsolidatedAspect:
+    """
+    Result of consolidating many aspects into a single aspect, merging the configurations.
+    """
+
     dependencies: dict[str, MergedSpec]
     pypi_dependencies: dict[str, MergedSpec]
     env_vars: dict[str, MergedEnvVarValue]
@@ -208,6 +274,10 @@ class ConsolidatedAspect:
 
 @dataclass
 class ConsolidatedFeature:
+    """
+    Result of consolidating many features into a single feature, merging the configurations.
+    """
+
     dependencies: dict[str, MergedSpec]
     pypi_dependencies: dict[str, MergedSpec]
     env_vars: dict[str, MergedEnvVarValue]
@@ -219,6 +289,8 @@ class ConsolidatedFeature:
 
 @dataclass(frozen=True)
 class FeatureWithProject:
+    """Utility that tracks a project together with a feature."""
+
     project: Project
     feature: Feature
 

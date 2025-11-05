@@ -9,6 +9,17 @@ pixi currently does not have full support to work with multiple projects in deve
 
 pixi-devenv makes it easy to aggregate multiple "projects" to create a single "product".
 
+
+## Usage
+
+In a directory with a `pixi.devenv.toml` and the target `pixi.toml`, execute:
+
+```console
+pixi exec -c conda-forge pixi-devenv update
+```
+
+This will update the `pixi.toml` file from the `pixi.devenv.toml` configuration.
+
 ## Introduction
 
 Here are a quick explanation of some `pixi` concepts that are important to understand to use `pixi-devenv`.
@@ -165,12 +176,8 @@ They will be added to the versions specifiers of the section *if* a downstream p
 ```toml
 [devenv.env-vars]
 # Lists are prepended to existing variable of same name, with the appropriate joiner for the platform (':' on Linux, ';' on Windows).
-# $project_dir is replaced by the project directory.
-PYTHONPATH = ['$project_dir/src']
-
-# Alternatives where it is possible to control if prepend or append.
-# PYTHONPATH.append = ['{{ project_dir }}/src']
-# PYTHONPATH.prepend = ['{{ project_dir }}/src']
+# {devenv_project_dir} is replaced by the project directory.
+PYTHONPATH = ['{devenv_project_dir}/src']
 
 # Strings are set directly.
 JOBS = "6"
@@ -180,7 +187,12 @@ JOBS = "6"
 CC = 'CC $CC'
 ```
 
-Environment variables (note this is different from *environments*). By default they are inherited.
+Variables might be used which will be replaced by the correct values when creating the `pixi.toml` file:
+
+* `{devenv_project_dir}`: root of the directory containing the `pixi.devenv.toml` file. This will be replaced by a 
+   relative path to `pixi.toml` in the final file.
+
+By default, they are inherited from upstream projects.
 
 This takes the place of the `[activation]` section of the default pixi configuration.
 
@@ -245,7 +257,7 @@ env-vars = true
 # Controls which features will be inherited. By default this table is empty, meaning no features are inherited.
 [devenv.inherit.features]  # Optional
 py310 = true  # inherits all features defined upstream named 'py310'.
-# py310-test = ['core']  # instead of inheriting all features of the same name, you can inherit the feature only from specific upstream projects.
+# py310-test = ['core']  # instead of inheriting 'py310-test' from all upstream projects, inherit it only from 'core'.
 ```
 
 Note: `environments` **are never inherited**. 
@@ -258,10 +270,10 @@ Note: `environments` **are never inherited**.
 
 There is one important difference on how the tools work:
 
-`conda-devenv`, on one hand, is a frontend tool. Developers work with it directly on their day to day work, even if they are not changing dependencies or adding/removing projects -- developers call `conda devenv` to create their environments. One consequence of this is that developers need to have `conda-devenv` installed in their root `conda` installation, which requires everyone to be using the exact same version `conda` version, because unfortunately bugs in conda happen (as in any software). The lack of native locking in `conda` requires using `conda-lock`, which by itself must also be of a compatible version with `conda` and `conda-devenv`, further complicating bootstrapping requirements.
+`conda-devenv` is a frontend tool. Developers work with it directly on their day-to-day work, even if they are not changing dependencies or adding/removing projects -- developers call `conda devenv` to create their environments. One consequence of this is that developers must have `conda-devenv` installed in their root `conda` installation, which requires everyone to be using the exact same version `conda` version, because unfortunately bugs in conda happen (as in any software). The lack of native locking in `conda` requires using `conda-lock`, which by itself must also be of a compatible version with `conda` and `conda-devenv`, further complicating bootstrapping.
 
 
-`pixi-devenv`, on the other hand, is a code generation tool. You don't need to use it on your day to day work, because you deal with a plain `pixi.toml` file, using `pixi` directly. You only need `pixi-devenv` when you make changes to the dependencies of the project, or add/remove upstream projects -- in that case, you invoke `pixi-devenv` to update your `pixi.toml` file. This allows `pixi-devenv` to be implemented like any other tool, resolving the bootstrapping problem.
+`pixi-devenv` is a code generation tool. Developers don't need to use it on their day-to-day work, only using `pixi` and plain `pixi.toml` files directly. Developers only need `pixi-devenv` when they make changes to the `pixi.devenv.toml` file, changing package dependencies, adding/removing upstream projects -- in that case, developers must invoke `pixi-devenv` to update your `pixi.toml` file. The fact that `pixi-devenv` is a standalone tool resolves the bootstrapping problem that plagues `conda-devenv`.
 
 
 

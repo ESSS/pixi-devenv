@@ -20,19 +20,26 @@ from pixi_devenv.project import DevEnvError
 from pixi_devenv.workspace import Workspace
 
 
-def update_pixi_config(root: Path) -> bool:
-    starting_file = root / "pixi.devenv.toml"
-    target_file = root / "pixi.toml"
+def update_pixi_config(root_directory: Path) -> bool:
+    """
+    Update the `pixi.toml` file from the `pixi.devenv.yml` file in the given directory.
+    """
+    starting_file = root_directory / "pixi.devenv.toml"
+    target_file = root_directory / "pixi.toml"
 
     if not starting_file.is_file():
-        raise DevEnvError(f"{starting_file.name} not found in {root}.\nConsider running pixi-devenv init.")
+        raise DevEnvError(
+            f"{starting_file.name} not found in {root_directory}.\nConsider running pixi-devenv init."
+        )
 
     if not target_file.is_file():
-        raise DevEnvError(f"{target_file.name} not found in {root}.\nConsider running pixi-devenv init.")
+        raise DevEnvError(
+            f"{target_file.name} not found in {root_directory}.\nConsider running pixi-devenv init."
+        )
 
     consolidated = consolidate_devenv(Workspace.from_starting_file(starting_file))
     contents = target_file.read_text(encoding="UTF-8")
-    new_contents = _update_pixi_contents(root, contents, consolidated)
+    new_contents = _update_pixi_contents(contents, consolidated)
     if contents != new_contents:
         target_file.write_text(new_contents, encoding="UTF-8")
         return True
@@ -40,7 +47,7 @@ def update_pixi_config(root: Path) -> bool:
         return False
 
 
-def _update_pixi_contents(root: Path, contents: str, consolidated: ConsolidatedProject) -> str:
+def _update_pixi_contents(contents: str, consolidated: ConsolidatedProject) -> str:
     doc = tomlkit.parse(contents)
 
     _update_workspace_fields(doc, consolidated)

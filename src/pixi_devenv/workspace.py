@@ -9,18 +9,31 @@ from pixi_devenv.project import ProjectName, Project, DevEnvError
 
 @dataclass
 class Workspace:
+    """
+    Many projects which inter depend on each other, defined by their pixi.devenv.toml configurations.
+
+    This contains the raw information as defined in the pixi.devenv.toml files. We consolidate the configuration
+    spread over those files into a single pixi.toml configuration via `consolidate.py`.
+    """
+
+    # The project where pixi-devenv was invoked from; the most downstream/leaf project.
     starting_project: Project
 
+    # All the projects in the workspace, contains `starting_project`.
     projects: Mapping[ProjectName, Project]
 
     # Project -> their direct Upstream projects.
     graph: Mapping[ProjectName, Sequence[ProjectName]]
 
+    # Order to iterate from the top upstream all the way to the bottom (the `starting_project`).
     _upstream_to_downstream_order: Sequence[ProjectName]
 
     @classmethod
-    def from_starting_file(cls, path: Path) -> Self:
-        starting_project = Project.from_file(path)
+    def from_starting_file(cls, pixi_devenv_file: Path) -> Self:
+        """
+        Creates the workspace based on the pixi.devenv.toml file from the given starting project.
+        """
+        starting_project = Project.from_file(pixi_devenv_file)
         to_process = [starting_project]
         projects = dict[ProjectName, Project]()
         graph = dict[ProjectName, list[ProjectName]]()
