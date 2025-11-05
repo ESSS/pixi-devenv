@@ -4,7 +4,7 @@ import os
 import string
 from collections import defaultdict
 from collections.abc import Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import PurePath, Path
 from typing import assert_never, Sequence
@@ -101,14 +101,14 @@ class ConsolidatedProject:
 
     name: str
 
-    channels: tuple[str, ...] = ()
-    platforms: tuple[str, ...] = ()
+    channels: tuple[str, ...]
+    platforms: tuple[str, ...]
 
-    dependencies: dict[str, MergedSpec] = field(default_factory=dict)
-    pypi_dependencies: dict[str, MergedSpec] = field(default_factory=dict)
-    env_vars: dict[str, MergedEnvVarValue] = field(default_factory=dict)
-    target: dict[str, ConsolidatedAspect] = field(default_factory=dict)
-    feature: dict[str, ConsolidatedFeature] = field(default_factory=dict)
+    dependencies: dict[str, MergedSpec]
+    pypi_dependencies: dict[str, MergedSpec]
+    env_vars: dict[str, MergedEnvVarValue]
+    target: dict[str, ConsolidatedAspect]
+    feature: dict[str, ConsolidatedFeature]
 
 
 type Sources = tuple[ProjectName, ...]
