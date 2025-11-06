@@ -212,8 +212,8 @@ def test_env_vars(
         """
         [devenv.env-vars]
         CONDA_PY = "310"
-        DOCS = "{devenv_project_dir}/bootstrap-docs"
-        PYTHONPATH = ["{devenv_project_dir}/src"]
+        DOCS = "${{ devenv_project_dir }}/bootstrap-docs"
+        PYTHONPATH = ["${{ devenv_project_dir }}/src"]
         """,
     )
     devenv_tester.write_devenv(
@@ -221,7 +221,7 @@ def test_env_vars(
         """
         devenv.upstream = ["../bootstrap"]
         [devenv.env-vars]
-        PYTHONPATH = ["{devenv_project_dir}/src", "{devenv_project_dir}/artifacts-$CONDA_PY"]
+        PYTHONPATH = ["${{ devenv_project_dir }}/src", "${{ devenv_project_dir }}/artifacts-$CONDA_PY"]
         """,
     )
     b_toml = devenv_tester.write_devenv(
@@ -230,9 +230,9 @@ def test_env_vars(
         devenv.upstream = ["../a"]
 
         [devenv.env-vars]
-        PYTHONPATH = ["{devenv_project_dir}/src"]
-        DOCS = "{devenv_project_dir}/b-docs"
-        README = "{devenv_project_dir}/README.md"
+        PYTHONPATH = ["${{ devenv_project_dir }}/src"]
+        DOCS = "${{ devenv_project_dir }}/b-docs"
+        README = "${{ devenv_project_dir }}/README.md"
         """,
     )
     ws = Workspace.from_starting_file(b_toml)
@@ -248,7 +248,7 @@ def test_env_vars(
         devenv.upstream = ["../b"]
 
         [devenv.env-vars]
-        PYTHONPATH = ["{devenv_project_dir}/src"]
+        PYTHONPATH = ["${{ devenv_project_dir }}/src"]
         
         [devenv.inherit]
         env-vars.exclude = ["a", "b"]
@@ -270,7 +270,7 @@ def test_targets(
         """
         [devenv.target.win]        
         dependencies = { pywin32 = "*" }
-        env-vars = { PLATFORM = "windows", MYPYPATH = ["{devenv_project_dir}/src"] }
+        env-vars = { PLATFORM = "windows", MYPYPATH = ["${{ devenv_project_dir }}/src"] }
         
         [devenv.target.linux-64]
         dependencies = { sysftcl = "*" }
@@ -293,7 +293,7 @@ def test_targets(
         devenv.upstream = ["../a"]
 
         [devenv.target.win]
-        env-vars = { MYPYPATH = ["{devenv_project_dir}/src"] }
+        env-vars = { MYPYPATH = ["${{ devenv_project_dir }}/src"] }
 
         [devenv.target.unix]
         pypi-dependencies = { pthread = "*" }
@@ -310,7 +310,7 @@ def test_targets(
         devenv.upstream = ["../a"]
 
         [devenv.target.win]
-        env-vars = { MYPYPATH = ["{devenv_project_dir}/src"] }
+        env-vars = { MYPYPATH = ["${{ devenv_project_dir }}/src"] }
 
         [devenv.target.unix]
         pypi-dependencies = { pthread = "*" }
@@ -367,7 +367,7 @@ def test_features(
 
         [devenv.feature.py310.target.windows]        
         dependencies = { pillow = "*" }
-        env-vars = { MYPYPATH = ["{devenv_project_dir}/src"] }
+        env-vars = { MYPYPATH = ["${{ devenv_project_dir }}/src"] }
         """,
     )
     b_toml = devenv_tester.write_devenv(
@@ -391,7 +391,7 @@ def test_features(
         devenv.upstream = ["../a"]        
         
         [devenv.feature.py310.target.windows]
-        env-vars = { MYPYPATH = ["{devenv_project_dir}/src"] } 
+        env-vars = { MYPYPATH = ["${{ devenv_project_dir }}/src"] } 
         """,
     )
     ws = Workspace.from_starting_file(b_toml)

@@ -9,6 +9,8 @@ from enum import Enum, auto
 from pathlib import PurePath, Path
 from typing import assert_never, Sequence
 
+import jinja2
+
 from pixi_devenv.project import Project, Spec, ProjectName, EnvVarValue, DevEnvError, Aspect, Feature
 from pixi_devenv.workspace import Workspace
 
@@ -185,6 +187,8 @@ class ResolvedEnvVar:
     Current placeholders are:
 
     * `devenv_project_dir` will be replaced by the directory of the current `pixi.devenv.toml` file.
+
+    Placeholders use GitHub Actions/rattler/conda-build syntax: `${{ placeholder }}`.
     """
 
     value: EnvVarValue
@@ -198,7 +202,8 @@ class ResolvedEnvVar:
         }
 
         def replace_devenv_vars(s: str) -> str:
-            return s.format(**mapping)
+            t = jinja2.Template(s, variable_start_string="${{", variable_end_string="}}")
+            return t.render(**mapping)
 
         match value:
             case str() as single_value:

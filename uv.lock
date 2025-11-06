@@ -230,6 +230,7 @@ name = "pixi-devenv"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "jinja2" },
     { name = "pyserde", extra = ["toml"] },
     { name = "tomlkit" },
     { name = "typer" },
@@ -246,6 +247,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "jinja2", specifier = ">=3.1.6" },
     { name = "pyserde", extras = ["toml"], specifier = ">=0.25.0" },
     { name = "tomlkit", specifier = ">=0.13.3" },
     { name = "typer", specifier = ">=0.17.3" },

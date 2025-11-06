@@ -15,7 +15,7 @@ def test_basic_update(devenv_tester: DevEnvTester, file_regression: FileRegressi
         platforms = ["linux-64"]
         
         [devenv.env-vars]
-        PYTHONPATH = ["{devenv_project_dir}/src"]
+        PYTHONPATH = ["${{ devenv_project_dir }}/src"]
         LD_LIBRARY_PATH = ["$CONDA_PREFIX/lib"]
         MYUSER = "$USER"
         MODE = "source"
@@ -28,7 +28,7 @@ def test_basic_update(devenv_tester: DevEnvTester, file_regression: FileRegressi
         
         [devenv.target.unix]
         dependencies = { flock = "*" }
-        env-vars = { FLOCK_MODE = "std", MYPYPATH = ["{devenv_project_dir}/typing"] }
+        env-vars = { FLOCK_MODE = "std", MYPYPATH = ["${{ devenv_project_dir }}/typing"] }
         
         [devenv.constraints]
         pyqt = ">=5.15"
@@ -48,7 +48,7 @@ def test_basic_update(devenv_tester: DevEnvTester, file_regression: FileRegressi
         devenv.upstream = ["../bootstrap"]
         
         [devenv.env-vars]
-        PYTHONPATH = ["{devenv_project_dir}/src"]
+        PYTHONPATH = ["${{ devenv_project_dir }}/src"]
         MODE = "package"
 
         [devenv.dependencies]
@@ -63,7 +63,7 @@ def test_basic_update(devenv_tester: DevEnvTester, file_regression: FileRegressi
         devenv.upstream = ["../a"]
         
         [devenv.env-vars]
-        PYTHONPATH = ["{devenv_project_dir}/src"]
+        PYTHONPATH = ["${{ devenv_project_dir }}/src"]
 
         [devenv.dependencies]
         numpy = ">=2.0"

@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "jinja2>=3.1.6",
     "pyserde[toml]>=0.25.0",
     "tomlkit>=0.13.3",
     "typer>=0.17.3",
