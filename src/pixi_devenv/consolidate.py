@@ -131,7 +131,7 @@ class MergedSpec:
 
         pytest = { version = ">=7.2,>=8.0", build="", channel="conda-forge" }
 
-    which will be written in the final `pixi.toml`file.
+    which will be written in the final `pixi.toml` file.
 
     Note:
 

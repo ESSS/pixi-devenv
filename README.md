@@ -5,7 +5,7 @@
 
 pixi-devenv is tool to work with multiple pixi projects in development mode.
 
-pixi currently does not have full support to work with multiple projects in development mode. Development mode allows one to use have each project declaring its own dependencies, and work with all of them with live code so changes are reflected immediately, without the needing of creating/installing the projects as packages in the environment.
+pixi currently does not have full support to work with multiple projects in development mode. Development mode allows one to have each project declaring its own dependencies, and work with all of them with live code so changes are reflected immediately, without the needing of creating/installing the projects as packages in the environment.
 
 pixi-devenv makes it easy to aggregate multiple "projects" to create a single "product".
 
