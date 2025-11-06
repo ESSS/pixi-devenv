@@ -266,7 +266,7 @@ Note: `environments` **are never inherited**.
 
 ## Differences to `conda-devenv`
 
-[conda-devenv](https://github.com/ESSS/pixi-devenv) is a tool developed by ESSS with the same purpose as `pixi-devenv`: working with multiple projects in development mode. 
+[conda-devenv](https://github.com/ESSS/conda-devenv) is a tool developed by ESSS with the same purpose as `pixi-devenv`: working with multiple projects in development mode. 
 
 There is one important difference on how the tools work:
 
