@@ -2,6 +2,6 @@
 
 ## 0.1.0
 
-*UNRELEASED*
+*2025-11-06*
 
 * First release.
