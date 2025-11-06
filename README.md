@@ -224,6 +224,8 @@ py312 = ["python312"]
 py312-test = ["python312", "test", "compile"]
 ```
 
+Note that features can be defined at any point in the hierarchy. Downstream projects control how/when they inherit features.
+
 Environment configuration, identical to pixi's `[environment]` section. Same as features, environments **are not inherited** by default.
 
 
@@ -276,4 +278,18 @@ There is one important difference on how the tools work:
 `pixi-devenv` is a code generation tool. Developers don't need to use it on their day-to-day work, only using `pixi` and plain `pixi.toml` files directly. Developers only need `pixi-devenv` when they make changes to the `pixi.devenv.toml` file, changing package dependencies, adding/removing upstream projects -- in that case, developers must invoke `pixi-devenv` to update your `pixi.toml` file. The fact that `pixi-devenv` is a standalone tool resolves the bootstrapping problem that plagues `conda-devenv`.
 
 
+## Development
 
+Because this is a pure Python package, we decided to use the more standard `uv` tool for development.
+
+To run mypy:
+
+```console
+uv run mypy
+```
+
+To run tests:
+
+```console
+uv run pytest
+```
