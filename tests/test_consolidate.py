@@ -2,7 +2,8 @@ import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from pixi_devenv.consolidate import consolidate_devenv, MergedSpec
-from pixi_devenv.project import ProjectName, Spec, DevEnvError
+from pixi_devenv.project import ProjectName, Spec
+from pixi_devenv.error import DevEnvError
 from pixi_devenv.workspace import Workspace
 from tests.devenv_tester import DevEnvTester
 

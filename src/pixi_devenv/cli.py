@@ -1,9 +1,11 @@
 from pathlib import Path
 
-from typer import Typer
+from typer import Typer, Exit
 import rich
 
+from pixi_devenv.error import DevEnvError
 from pixi_devenv.update import update_pixi_config
+from pixi_devenv.init import init_devenv
 
 app = Typer()
 
@@ -20,8 +22,16 @@ def update(path: Path | None = None) -> None:
 
 @app.command()
 def init() -> None:
-    """Initialize pixi-devenv configuration in this directory (TODO)"""
-    print("Coming soon")
+    """Initialize pixi-devenv configuration in this directory."""
+    try:
+        init_devenv(Path.cwd())
+    except DevEnvError as e:
+        rich.print(f"[red]ERROR: {e}[/red]")
+        raise Exit(code=1)
+    else:
+        rich.print(
+            "[green]pixi devenv initialized. Edit pixi.devenv.toml as needed and run 'pixi update'.[/green]"
+        )
 
 
 @app.command()

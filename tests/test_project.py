@@ -1,7 +1,8 @@
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from pixi_devenv.project import Project, DevEnvError
+from pixi_devenv.project import Project
+from pixi_devenv.error import DevEnvError
 from tests.devenv_tester import DevEnvTester
 
 

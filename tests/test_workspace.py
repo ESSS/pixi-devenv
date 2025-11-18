@@ -1,6 +1,6 @@
 import pytest
 
-from pixi_devenv.project import DevEnvError
+from pixi_devenv.error import DevEnvError
 from pixi_devenv.workspace import Workspace
 from tests.devenv_tester import DevEnvTester
 

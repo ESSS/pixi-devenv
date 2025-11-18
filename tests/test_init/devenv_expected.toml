@@ -1,0 +1,10 @@
+[devenv]
+channels = [
+    "conda-forge",
+]
+platforms = ["win-64", "linux-64"]
+
+[devenv.dependencies]
+
+[devenv.env-vars]
+PYTHONPATH = ["${{ devenv_project_dir }}/source/python"]

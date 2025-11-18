@@ -11,7 +11,8 @@ from typing import assert_never, Sequence
 
 import jinja2
 
-from pixi_devenv.project import Project, Spec, ProjectName, EnvVarValue, DevEnvError, Aspect, Feature
+from pixi_devenv.project import Project, Spec, ProjectName, EnvVarValue, Aspect, Feature
+from pixi_devenv.error import DevEnvError
 from pixi_devenv.workspace import Workspace
 
 
