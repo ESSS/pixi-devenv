@@ -16,7 +16,7 @@ from pixi_devenv.consolidate import (
     Shell,
     ConsolidatedFeature,
 )
-from pixi_devenv.project import DevEnvError
+from pixi_devenv.error import DevEnvError
 from pixi_devenv.workspace import Workspace
 
 

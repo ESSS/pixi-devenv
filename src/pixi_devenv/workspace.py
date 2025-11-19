@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Self, Mapping, Iterator
 
-from pixi_devenv.project import ProjectName, Project, DevEnvError
+from pixi_devenv.project import ProjectName, Project
+from pixi_devenv.error import DevEnvError
 
 
 @dataclass
