@@ -32,10 +32,3 @@ def init() -> None:
         rich.print(
             "[green]pixi devenv initialized. Edit pixi.devenv.toml as needed and run 'pixi update'.[/green]"
         )
-
-
-@app.command()
-def import_from_conda(file: str = "environment.devenv.yml", feature: str = "") -> None:
-    """Import conda-devenv configuration into a pixi.devenv.toml file"""
-    # 'feature' is used to import the environment.devenv.yml contents as a feature.
-    print(f"Coming soon ({file} {feature})")
