@@ -1,8 +1,8 @@
 # CHANGELOG
 
-## UNRELEASED
+## 0.2.0
 
-*UNRELEASED*
+*2025-11-19*
 
 * New `init` command used to generate initial `pixi.devenv.toml` and `pixi.toml` files.
 
