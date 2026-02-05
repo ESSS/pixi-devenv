@@ -487,7 +487,7 @@ def test_channels_and_platforms(
 def test_target_platform_filtering(
     devenv_tester: DevEnvTester, file_regression: FileRegressionFixture, request: pytest.FixtureRequest
 ) -> None:
-    """Test that targets are filtered based on downstream platform restrictions (ASIM-6522).."""
+    """Test that targets are filtered based on downstream platform restrictions."""
     devenv_tester.write_devenv(
         "bootstrap",
         """
