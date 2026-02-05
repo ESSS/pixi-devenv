@@ -61,18 +61,47 @@ class Shell(Enum):
                 assert_never(unreachable)
 
 
+def target_matches_platforms(target_name: str, platforms: Sequence[str]) -> bool:
+    """
+    Determines if a target name matches any of the given platforms.
+
+    Empty `platforms` means all targets match.
+
+    Target names can be:
+    - Exact platform names: "linux-64", "win-64", etc.
+    - Aggregate selectors: "win"/"windows", "linux", "osx"/"macos", "unix"
+    """
+    if not platforms:
+        # No filtering if no platforms specified.
+        return True
+
+    if target_name in platforms:
+        # Exact match.
+        return True
+
+    for platform in platforms:
+        # Windows selectors.
+        if target_name in ("win", "windows") and platform.startswith("win"):
+            return True
+        # Linux selectors.
+        if target_name == "linux" and platform.startswith("linux"):
+            return True
+        # macOS selectors.
+        if target_name in ("osx", "macos") and platform.startswith("osx"):
+            return True
+        # Unix selector (everything except Windows).
+        if target_name == "unix" and not platform.startswith("win"):
+            return True
+
+    return False
+
+
 def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
     """
     Consolidates the given workspace definition, coalescing all pixi-devenv settings from the different files
     in the workspace into a single pixi definition.
     """
-    root_aspect = _consolidate_aspects(
-        workspace, [(p, p.get_root_aspect()) for p in workspace.iter_downstream()]
-    )
-
-    consolidated_target = _consolidate_target(workspace, list(workspace.iter_downstream()))
-    consolidated_feature = _consolidate_feature(workspace)
-
+    # Resolve platforms FIRST (downstream wins).
     channels: tuple[str, ...] = ()
     platforms: tuple[str, ...] = ()
 
@@ -81,6 +110,15 @@ def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
             channels = project.channels
         if project.platforms:
             platforms = project.platforms
+
+    # Consolidate root aspects.
+    root_aspect = _consolidate_aspects(
+        workspace, [(p, p.get_root_aspect()) for p in workspace.iter_downstream()]
+    )
+
+    # 3. Pass platforms to filter targets
+    consolidated_target = _consolidate_target(workspace, list(workspace.iter_downstream()), platforms)
+    consolidated_feature = _consolidate_feature(workspace, platforms)
 
     return ConsolidatedProject(
         name=workspace.starting_project.name,
@@ -397,12 +435,13 @@ def _consolidate_aspects(
 
 
 def _consolidate_target(
-    workspace: Workspace, projects: Sequence[Project | FeatureWithProject]
+    workspace: Workspace, projects: Sequence[Project | FeatureWithProject], platforms: Sequence[str] = ()
 ) -> dict[str, ConsolidatedAspect]:
     all_targets = defaultdict[str, list[Project | FeatureWithProject]](list)
     for project in projects:
         for target_name in project.target:
-            all_targets[target_name].append(project)
+            if target_matches_platforms(target_name, platforms):
+                all_targets[target_name].append(project)
 
     consolidated_aspect = dict[str, ConsolidatedAspect]()
     for target_name, projects in all_targets.items():
@@ -411,7 +450,9 @@ def _consolidate_target(
     return consolidated_aspect
 
 
-def _consolidate_feature(workspace: Workspace) -> dict[str, ConsolidatedFeature]:
+def _consolidate_feature(
+    workspace: Workspace, platforms: Sequence[str] = ()
+) -> dict[str, ConsolidatedFeature]:
     all_features = defaultdict[str, list[Project]](list)
     for project in workspace.iter_downstream():
         for feature_name in project.feature:
@@ -431,7 +472,7 @@ def _consolidate_feature(workspace: Workspace) -> dict[str, ConsolidatedFeature]
                 features_with_projects.append(FeatureWithProject(project, project.feature[feature_name]))
 
         aspect = _consolidate_aspects(workspace, aspects_and_projects)
-        target = _consolidate_target(workspace, features_with_projects)
+        target = _consolidate_target(workspace, features_with_projects, platforms)
 
         consolidated_feature = ConsolidatedFeature(
             dependencies=aspect.dependencies,
