@@ -540,7 +540,7 @@ def test_target_platform_filtering(
 def test_feature_target_platform_filtering(
     devenv_tester: DevEnvTester, file_regression: FileRegressionFixture, request: pytest.FixtureRequest
 ) -> None:
-    """Test that feature targets are also filtered based on downstream platform restrictions (ASIM-6522)."""
+    """Test that feature targets are also filtered based on downstream platform restrictions."""
     devenv_tester.write_devenv(
         "bootstrap",
         """
