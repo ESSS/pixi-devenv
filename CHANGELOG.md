@@ -2,7 +2,7 @@
 
 ## 0.3.0
 
-*2026-02-05*
+*2026-02-06*
 
 * [#5](https://github.com/ESSS/pixi-devenv/issues/5): Skip platform-specific configuration if unsupported by downstream.
 
