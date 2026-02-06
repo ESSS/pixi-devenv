@@ -1,0 +1,13 @@
+ConsolidatedProject(name='a',
+                    channels=(),
+                    platforms=('win-64',),
+                    dependencies={},
+                    pypi_dependencies={},
+                    env_vars={},
+                    target={'win': ConsolidatedAspect(dependencies={'pywin32': MergedSpec(sources=('bootstrap',),
+                                                                                          spec=Spec(version='*',
+                                                                                                    build='',
+                                                                                                    channel=''))},
+                                                      pypi_dependencies={},
+                                                      env_vars={})},
+                    feature={})

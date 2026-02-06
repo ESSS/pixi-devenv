@@ -1,11 +1,40 @@
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from pixi_devenv.consolidate import consolidate_devenv, MergedSpec
+from pixi_devenv.consolidate import consolidate_devenv, MergedSpec, target_matches_platforms
 from pixi_devenv.project import ProjectName, Spec
 from pixi_devenv.error import DevEnvError
 from pixi_devenv.workspace import Workspace
 from tests.devenv_tester import DevEnvTester
+
+
+@pytest.mark.parametrize(
+    "target_name,platforms,expected",
+    [
+        # Empty platforms matches all.
+        ("win", (), True),
+        # Exact match.
+        ("linux-64", ("linux-64", "win-64"), True),
+        ("linux-64", ("win-64",), False),
+        # Windows selector.
+        ("win", ("win-64",), True),
+        ("windows", ("win-64",), True),
+        ("win", ("linux-64",), False),
+        # Linux selector.
+        ("linux", ("linux-64",), True),
+        ("linux", ("win-64",), False),
+        # macOS selector.
+        ("osx", ("osx-64",), True),
+        ("macos", ("osx-arm64",), True),
+        ("osx", ("linux-64",), False),
+        # Unix selector (everything except Windows).
+        ("unix", ("linux-64",), True),
+        ("unix", ("osx-64",), True),
+        ("unix", ("win-64",), False),
+    ],
+)
+def test_target_matches_platforms(target_name: str, platforms: tuple[str, ...], expected: bool) -> None:
+    assert target_matches_platforms(target_name, platforms) is expected
 
 
 def test_merged_spec() -> None:
@@ -452,4 +481,99 @@ def test_channels_and_platforms(
     project = consolidate_devenv(ws)
     file_regression.check(
         devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_overwrite"
+    )
+
+
+def test_target_platform_filtering(
+    devenv_tester: DevEnvTester, file_regression: FileRegressionFixture, request: pytest.FixtureRequest
+) -> None:
+    """Test that targets are filtered based on downstream platform restrictions."""
+    devenv_tester.write_devenv(
+        "bootstrap",
+        """
+        [devenv]
+        platforms = ["linux-64", "win-64"]
+
+        [devenv.target.win]
+        dependencies = { pywin32 = "*" }
+
+        [devenv.target.unix]
+        dependencies = { libx11 = "*" }
+    """,
+    )
+
+    # Downstream restricts to Linux only.
+    a_toml = devenv_tester.write_devenv(
+        "a",
+        """
+        [devenv]
+        platforms = ["linux-64"]
+        upstream = ["../bootstrap"]
+    """,
+    )
+    ws = Workspace.from_starting_file(a_toml)
+    project = consolidate_devenv(ws)
+
+    # Should have "unix" target but NOT "win" target.
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_linux_only"
+    )
+
+    # Downstream restricts to Windows only.
+    a_toml = devenv_tester.write_devenv(
+        "a",
+        """
+        [devenv]
+        platforms = ["win-64"]
+        upstream = ["../bootstrap"]
+    """,
+    )
+    ws = Workspace.from_starting_file(a_toml)
+    project = consolidate_devenv(ws)
+
+    # Should have "win" target but NOT "unix" target.
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_win_only"
+    )
+
+
+def test_feature_target_platform_filtering(
+    devenv_tester: DevEnvTester, file_regression: FileRegressionFixture, request: pytest.FixtureRequest
+) -> None:
+    """Test that feature targets are also filtered based on downstream platform restrictions."""
+    devenv_tester.write_devenv(
+        "bootstrap",
+        """
+        [devenv]
+        platforms = ["linux-64", "win-64"]
+
+        [devenv.feature.test]
+        dependencies = { pytest = "*" }
+
+        [devenv.feature.test.target.win]
+        dependencies = { pywin32 = "*" }
+
+        [devenv.feature.test.target.unix]
+        dependencies = { libx11 = "*" }
+    """,
+    )
+
+    # Downstream restricts to Linux only.
+    a_toml = devenv_tester.write_devenv(
+        "a",
+        """
+        [devenv]
+        platforms = ["linux-64"]
+        upstream = ["../bootstrap"]
+
+        [devenv.feature.test]
+        dependencies = { coverage = "*" }
+    """,
+    )
+    ws = Workspace.from_starting_file(a_toml)
+    project = consolidate_devenv(ws)
+
+    # Feature should have "unix" target but NOT "win" target.
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_linux_only"
     )
