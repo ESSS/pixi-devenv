@@ -1,6 +1,8 @@
 from pathlib import Path
+import importlib.metadata
+from typing import Annotated
 
-from typer import Typer, Exit
+from typer import Typer, Exit, Option
 import rich
 
 from pixi_devenv.error import DevEnvError
@@ -8,6 +10,17 @@ from pixi_devenv.update import update_pixi_config
 from pixi_devenv.init import init_devenv
 
 app = Typer()
+
+
+@app.callback(invoke_without_command=True)
+def main(
+    version: Annotated[bool, Option("--version", is_eager=True)] = False,
+) -> None:
+    """Placeholder that implements --version."""
+    if version:
+        version_str = importlib.metadata.version("pixi-devenv")
+        print(f"pixi-devenv {version_str}")
+        raise Exit()
 
 
 @app.command()
