@@ -28,11 +28,6 @@ MYPYPATH = "${PIXI_PROJECT_ROOT}/../bootstrap/typing:${MYPYPATH}"
 MYUSER = "${USER}"
 PYTHONPATH = "${PIXI_PROJECT_ROOT}/../bootstrap/src:${PIXI_PROJECT_ROOT}/../a/src:${PIXI_PROJECT_ROOT}/src:${PYTHONPATH}"
 
-[target.win.activation.env] # Managed by devenv
-LD_LIBRARY_PATH = "%CONDA_PREFIX%/lib;%LD_LIBRARY_PATH%"
-MYUSER = "%USER%"
-PYTHONPATH = "%PIXI_PROJECT_ROOT%/../bootstrap/src;%PIXI_PROJECT_ROOT%/../a/src;%PIXI_PROJECT_ROOT%/src;%PYTHONPATH%"
-
 [feature.py310.dependencies] # Managed by devenv
 python = "3.10.*" # From: bootstrap
 typing_extensions = "*" # From: bootstrap

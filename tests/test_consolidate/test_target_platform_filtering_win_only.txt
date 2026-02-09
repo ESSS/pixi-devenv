@@ -9,5 +9,6 @@ ConsolidatedProject(name='a',
                                                                                                     build='',
                                                                                                     channel=''))},
                                                       pypi_dependencies={},
-                                                      env_vars={})},
+                                                      env_vars={'PARALLEL_MODE': MergedEnvVarValue(sources=('bootstrap',),
+                                                                                                   var=ResolvedEnvVar(value='none'))})},
                     feature={})

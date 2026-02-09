@@ -1,6 +1,6 @@
 import dataclasses
 import string
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import assert_never
 
@@ -15,6 +15,7 @@ from pixi_devenv.consolidate import (
     MergedEnvVarValue,
     Shell,
     ConsolidatedFeature,
+    target_matches_platforms,
 )
 from pixi_devenv.error import DevEnvError
 from pixi_devenv.workspace import Workspace
@@ -51,13 +52,13 @@ def _update_pixi_contents(contents: str, consolidated: ConsolidatedProject) -> s
     doc = tomlkit.parse(contents)
 
     _update_workspace_fields(doc, consolidated)
-    tables = _get_project_or_feature_tables(consolidated)
+    tables = _get_project_or_feature_tables(consolidated, consolidated.platforms)
     for name, table in tables.items():
         doc[name] = table
 
     features_table = _make_table()
     for feature_name, feature in consolidated.feature.items():
-        tables = _get_project_or_feature_tables(feature)
+        tables = _get_project_or_feature_tables(feature, consolidated.platforms)
         features_table[feature_name] = tables
 
     if features_table:
@@ -83,18 +84,25 @@ def _update_workspace_fields(doc: tomlkit.TOMLDocument, consolidated: Consolidat
 
 def _get_project_or_feature_tables(
     consolidated: ConsolidatedProject | ConsolidatedFeature,
+    platforms: Sequence[str] = (),
 ) -> dict[str, Table]:
+    """
+    Get the tables for the project or feature, including dependencies, pypi-dependencies, activation and target.
+
+    :param consolidated: The consolidated project or feature to get the tables for.
+    :param platforms: The platforms to consider when rendering platform-specific environment variables.
+    """
     result: dict[str, Table] = {}
     if table := _create_dependencies_table(consolidated.dependencies):
         result["dependencies"] = table
     if table := _create_dependencies_table(consolidated.pypi_dependencies):
         result["pypi-dependencies"] = table
 
-    grouped = _split_env_vars(consolidated.env_vars)
+    grouped_env_vars = _split_env_vars(consolidated.env_vars)
 
-    if grouped.generic:
+    if grouped_env_vars.generic:
         env_table = _make_table()
-        env_table.update(grouped.generic)
+        env_table.update(grouped_env_vars.generic)
 
         activation_table = _make_table()
         activation_table["env"] = env_table
@@ -105,11 +113,13 @@ def _get_project_or_feature_tables(
 
     platform_specific_by_target = {}
 
-    if grouped.platform_specific:
-        platform_specific_by_target["unix"] = grouped.platform_specific
-        platform_specific_by_target["win"] = grouped.platform_specific
+    if grouped_env_vars.platform_specific:
+        if target_matches_platforms("unix", platforms):
+            platform_specific_by_target["unix"] = grouped_env_vars.platform_specific
+        if target_matches_platforms("win", platforms):
+            platform_specific_by_target["win"] = grouped_env_vars.platform_specific
 
-    if consolidated.target or grouped.platform_specific:
+    if consolidated.target or grouped_env_vars.platform_specific:
         for target_name, aspect in consolidated.target.items():
             current_target_table = _make_table()
             target_table[target_name] = current_target_table

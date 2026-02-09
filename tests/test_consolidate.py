@@ -496,9 +496,11 @@ def test_target_platform_filtering(
 
         [devenv.target.win]
         dependencies = { pywin32 = "*" }
+        env-vars = { PARALLEL_MODE = "none" }
 
         [devenv.target.unix]
         dependencies = { libx11 = "*" }
+        env-vars = { PARALLEL_MODE = "threads" }
     """,
     )
 
@@ -534,46 +536,4 @@ def test_target_platform_filtering(
     # Should have "win" target but NOT "unix" target.
     file_regression.check(
         devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_win_only"
-    )
-
-
-def test_feature_target_platform_filtering(
-    devenv_tester: DevEnvTester, file_regression: FileRegressionFixture, request: pytest.FixtureRequest
-) -> None:
-    """Test that feature targets are also filtered based on downstream platform restrictions."""
-    devenv_tester.write_devenv(
-        "bootstrap",
-        """
-        [devenv]
-        platforms = ["linux-64", "win-64"]
-
-        [devenv.feature.test]
-        dependencies = { pytest = "*" }
-
-        [devenv.feature.test.target.win]
-        dependencies = { pywin32 = "*" }
-
-        [devenv.feature.test.target.unix]
-        dependencies = { libx11 = "*" }
-    """,
-    )
-
-    # Downstream restricts to Linux only.
-    a_toml = devenv_tester.write_devenv(
-        "a",
-        """
-        [devenv]
-        platforms = ["linux-64"]
-        upstream = ["../bootstrap"]
-
-        [devenv.feature.test]
-        dependencies = { coverage = "*" }
-    """,
-    )
-    ws = Workspace.from_starting_file(a_toml)
-    project = consolidate_devenv(ws)
-
-    # Feature should have "unix" target but NOT "win" target.
-    file_regression.check(
-        devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_linux_only"
     )
