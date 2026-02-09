@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## UNRELEASED
+
+*UNRELEASED*
+
+* [#5](https://github.com/ESSS/pixi-devenv/issues/5): Skip platform-specific environment variables if unsupported by downstream.
+
 ## 0.3.0
 
 *2026-02-06*
