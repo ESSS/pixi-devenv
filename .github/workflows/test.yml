@@ -40,4 +40,4 @@ jobs:
       shell: bash
       run: |
         uv build
-        uvx --with `find dist/*.whl` pixi-devenv --help
+        uvx --with `find dist/*.whl` pixi-devenv --version

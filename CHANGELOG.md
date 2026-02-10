@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## UNRELEASED
+
+*UNRELEASED*
+
+* Added `--version` CLI option to display current version.
+
 ## 0.3.1
 
 *2026-02-09*
