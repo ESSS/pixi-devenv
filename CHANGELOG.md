@@ -5,6 +5,7 @@
 *UNRELEASED*
 
 * Added `--version` CLI option to display current version.
+* Added support for `exclude-newer` in `pixi.devenv.toml`: the option propagates to downstream projects, with the most-downstream value winning.
 
 ## 0.3.1
 

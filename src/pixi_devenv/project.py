@@ -257,6 +257,11 @@ class Project:
     # List of platforms that this project supports.
     platforms: tuple[str, ...] = ()
 
+    # Optional date cutoff for the package resolver: excludes packages newer than the given date,
+    # e.g. "7d" or "2025-06-01T00:00:00Z". Propagates downstream; the most-downstream project that sets
+    # this value wins.
+    exclude_newer: str | None = serde.field(rename="exclude-newer", default=None)
+
     # List of upstream projects.
     upstream: tuple[str | Upstream, ...] = ()
 

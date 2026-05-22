@@ -537,3 +537,46 @@ def test_target_platform_filtering(
     file_regression.check(
         devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_win_only"
     )
+
+
+def test_exclude_newer(
+    devenv_tester: DevEnvTester, file_regression: FileRegressionFixture, request: pytest.FixtureRequest
+) -> None:
+    """Test that exclude-newer propagates downstream, with the most-downstream value winning."""
+    devenv_tester.write_devenv(
+        "bootstrap",
+        """
+        [devenv]
+        exclude-newer = "7d"
+        """,
+    )
+    a_toml = devenv_tester.write_devenv(
+        "a",
+        """
+        devenv.upstream = ["../bootstrap"]
+        """,
+    )
+    ws = Workspace.from_starting_file(a_toml)
+    project = consolidate_devenv(ws)
+
+    # Downstream inherits exclude-newer from upstream.
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_from_upstream"
+    )
+
+    # Downstream overrides exclude-newer.
+    a_toml = devenv_tester.write_devenv(
+        "a",
+        """
+        [devenv]
+        exclude-newer = "2025-06-01T00:00:00Z"
+        upstream = ["../bootstrap"]
+        """,
+    )
+    ws = Workspace.from_starting_file(a_toml)
+    project = consolidate_devenv(ws)
+
+    # The downstream value wins.
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_overwrite"
+    )

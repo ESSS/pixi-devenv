@@ -101,15 +101,18 @@ def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
     Consolidates the given workspace definition, coalescing all pixi-devenv settings from the different files
     in the workspace into a single pixi definition.
     """
-    # Resolve platforms FIRST (downstream wins).
+    # Resolve platforms and scalar workspace fields FIRST (downstream wins).
     channels: tuple[str, ...] = ()
     platforms: tuple[str, ...] = ()
+    exclude_newer: str | None = None
 
     for project in workspace.iter_downstream():
         if project.channels:
             channels = project.channels
         if project.platforms:
             platforms = project.platforms
+        if project.exclude_newer is not None:
+            exclude_newer = project.exclude_newer
 
     # Consolidate root aspects.
     root_aspect = _consolidate_aspects(
@@ -124,6 +127,7 @@ def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
         name=workspace.starting_project.name,
         channels=channels,
         platforms=platforms,
+        exclude_newer=exclude_newer,
         dependencies=root_aspect.dependencies,
         pypi_dependencies=root_aspect.pypi_dependencies,
         env_vars=root_aspect.env_vars,
@@ -144,6 +148,7 @@ class ConsolidatedProject:
 
     channels: tuple[str, ...]
     platforms: tuple[str, ...]
+    exclude_newer: str | None
 
     dependencies: dict[str, MergedSpec]
     pypi_dependencies: dict[str, MergedSpec]
