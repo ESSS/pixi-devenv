@@ -27,6 +27,7 @@ ConsolidatedProject(name='c',
                                                                  spec=Spec(version='*',
                                                                            build='',
                                                                            channel=''))},
+                    constraints={},
                     env_vars={},
                     target={},
                     feature={})

@@ -130,6 +130,7 @@ def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
         exclude_newer=exclude_newer,
         dependencies=root_aspect.dependencies,
         pypi_dependencies=root_aspect.pypi_dependencies,
+        constraints=root_aspect.constraints,
         env_vars=root_aspect.env_vars,
         target=consolidated_target,
         feature=consolidated_feature,
@@ -152,6 +153,7 @@ class ConsolidatedProject:
 
     dependencies: dict[str, MergedSpec]
     pypi_dependencies: dict[str, MergedSpec]
+    constraints: dict[str, MergedSpec]
     env_vars: dict[str, MergedEnvVarValue]
     target: dict[str, ConsolidatedAspect]
     feature: dict[str, ConsolidatedFeature]
@@ -318,6 +320,7 @@ class ConsolidatedAspect:
 
     dependencies: dict[str, MergedSpec]
     pypi_dependencies: dict[str, MergedSpec]
+    constraints: dict[str, MergedSpec]
     env_vars: dict[str, MergedEnvVarValue]
 
 
@@ -329,11 +332,18 @@ class ConsolidatedFeature:
 
     dependencies: dict[str, MergedSpec]
     pypi_dependencies: dict[str, MergedSpec]
+    constraints: dict[str, MergedSpec]
     env_vars: dict[str, MergedEnvVarValue]
     target: dict[str, ConsolidatedAspect]
 
     def is_empty(self) -> bool:
-        return not self.dependencies and not self.pypi_dependencies and not self.env_vars and not self.target
+        return (
+            not self.dependencies
+            and not self.pypi_dependencies
+            and not self.constraints
+            and not self.env_vars
+            and not self.target
+        )
 
 
 @dataclass(frozen=True)
@@ -370,12 +380,12 @@ def _consolidate_aspects(
         for name, spec in specs:
             try:
                 merged_spec = dependencies_dict[name]
-                dependencies_dict[name] = merged_spec.add(name, project_name, spec)
             except KeyError:
-                merged_spec = MergedSpec((project_name,), spec)
-                if constraint := constraints.get(name):
-                    merged_spec = merged_spec.add(name, constraint.sources, constraint.spec)
-                dependencies_dict[name] = merged_spec
+                # Add new dependency.
+                dependencies_dict[name] = MergedSpec((project_name,), spec)
+            else:
+                # Merge with existing dependency.
+                dependencies_dict[name] = merged_spec.add(name, project_name, spec)
 
     constraints: dict[str, MergedSpec] = {}
 
@@ -435,7 +445,10 @@ def _consolidate_aspects(
                 result_env_vars[name] = merged
 
     return ConsolidatedAspect(
-        dependencies=dependencies, pypi_dependencies=pypi_dependencies, env_vars=result_env_vars
+        dependencies=dependencies,
+        pypi_dependencies=pypi_dependencies,
+        constraints=constraints,
+        env_vars=result_env_vars,
     )
 
 
@@ -482,6 +495,7 @@ def _consolidate_feature(
         consolidated_feature = ConsolidatedFeature(
             dependencies=aspect.dependencies,
             pypi_dependencies=aspect.pypi_dependencies,
+            constraints=aspect.constraints,
             env_vars=aspect.env_vars,
             target=target,
         )

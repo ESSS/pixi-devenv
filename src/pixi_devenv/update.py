@@ -101,6 +101,8 @@ def _get_project_or_feature_tables(
         result["dependencies"] = table
     if table := _create_dependencies_table(consolidated.pypi_dependencies):
         result["pypi-dependencies"] = table
+    if table := _create_dependencies_table(consolidated.constraints):
+        result["constraints"] = table
 
     grouped_env_vars = _split_env_vars(consolidated.env_vars)
 
@@ -132,6 +134,8 @@ def _get_project_or_feature_tables(
                 current_target_table["dependencies"] = table
             if table := _create_dependencies_table(aspect.pypi_dependencies):
                 current_target_table["pypi-dependencies"] = table
+            if table := _create_dependencies_table(aspect.constraints):
+                current_target_table["constraints"] = table
 
             env_vars = dict(aspect.env_vars)
             if (existing_section := platform_specific_by_target.pop(target_name, None)) is not None:

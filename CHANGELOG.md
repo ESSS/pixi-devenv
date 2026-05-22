@@ -6,6 +6,8 @@
 
 * Added `--version` CLI option to display current version.
 * Added support for `exclude-newer` in `pixi.devenv.toml`: the option propagates to downstream projects, with the most-downstream value winning.
+* Now `[devenv.constraints]` are now passed through unchanged to `[constraints]` in the generated `pixi.toml`. 
+  Since pixi `0.66` natively supports the `[constraints]` concept, constraints are now passed through unchanged and written to `[constraints]` independently of whether the same package appears in `[dependencies]` or `[pypi-dependencies]`.
 
 ## 0.3.1
 

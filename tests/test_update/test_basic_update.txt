@@ -9,11 +9,14 @@ default = ["py310"]
 
 [dependencies] # Managed by devenv
 boltons = "24.0,>=24.2" # From: bootstrap, a
-pyqt = {version = ">=5.15", channel = "conda-forge"} # From: a, bootstrap
+pyqt = {version = "*", channel = "conda-forge"} # From: a
 numpy = ">=2.0" # From: b
 
 [pypi-dependencies] # Managed by devenv
 attrs = "25.0" # From: bootstrap
+
+[constraints] # Managed by devenv
+pyqt = ">=5.15" # From: bootstrap
 
 [activation.env] # Managed by devenv
 MODE = "package"

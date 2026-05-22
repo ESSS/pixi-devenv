@@ -122,7 +122,7 @@ def test_dependencies_with_constraints(
         [devenv.constraints]
         pyqt = ">=5.15"
         boltons = "24.0"
-        foobar = "1.0"  # Will not appear because no downstream projects directly depend on it.
+        foobar = "1.0"
         """,
     )
     devenv_tester.write_devenv(
