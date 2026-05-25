@@ -1,0 +1,9 @@
+
+[workspace]
+name = "a" # Managed by devenv
+channels = ["conda-forge"] # Managed by devenv
+platforms = ["linux-64"] # Managed by devenv
+exclude-newer = "7d" # Managed by devenv
+
+[dependencies] # Managed by devenv
+boltons = "24.0" # From: bootstrap

@@ -91,3 +91,38 @@ def test_basic_update(devenv_tester: DevEnvTester, file_regression: FileRegressi
 
     update_pixi_config(pixi.parent)
     file_regression.check(pixi.read_text(encoding="UTF-8"))
+
+
+def test_exclude_newer_update(devenv_tester: DevEnvTester, file_regression: FileRegressionFixture) -> None:
+    """Test that exclude-newer is written to the workspace section of pixi.toml."""
+    devenv_tester.write_devenv(
+        "bootstrap",
+        """
+        [devenv]
+        channels = ["conda-forge"]
+        platforms = ["linux-64"]
+        exclude-newer = "7d"
+
+        [devenv.dependencies]
+        boltons = "24.0"
+        """,
+    )
+    devenv_tester.write_devenv(
+        "a",
+        """
+        devenv.upstream = ["../bootstrap"]
+        """,
+    )
+
+    pixi = devenv_tester.write_pixi(
+        "a",
+        dedent("""
+        [workspace]
+        name = "some project"
+        channels = ["conda-forge"]
+        platforms = ["linux-64"]
+        """),
+    )
+
+    update_pixi_config(pixi.parent)
+    file_regression.check(pixi.read_text(encoding="UTF-8"))

@@ -1,6 +1,7 @@
 ConsolidatedProject(name='b',
                     channels=(),
                     platforms=(),
+                    exclude_newer=None,
                     dependencies={'pyqt': MergedSpec(sources=('b', 'bootstrap'),
                                                      spec=Spec(version='>=5.15',
                                                                build='',

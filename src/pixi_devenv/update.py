@@ -81,6 +81,10 @@ def _update_workspace_fields(doc: tomlkit.TOMLDocument, consolidated: Consolidat
     doc["workspace"]["platforms"] = consolidated.platforms  # type:ignore[index]
     doc["workspace"]["platforms"].comment(_MANAGED_COMMENT)  # type:ignore[index, union-attr]
 
+    if consolidated.exclude_newer is not None:
+        doc["workspace"]["exclude-newer"] = consolidated.exclude_newer  # type:ignore[index]
+        doc["workspace"]["exclude-newer"].comment(_MANAGED_COMMENT)  # type:ignore[index, union-attr]
+
 
 def _get_project_or_feature_tables(
     consolidated: ConsolidatedProject | ConsolidatedFeature,

@@ -1,6 +1,7 @@
 ConsolidatedProject(name='c',
                     channels=(),
                     platforms=(),
+                    exclude_newer=None,
                     dependencies={},
                     pypi_dependencies={},
                     env_vars={'CONDA_PY': MergedEnvVarValue(sources=('bootstrap',),
