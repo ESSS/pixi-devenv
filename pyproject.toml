@@ -1,7 +1,7 @@
 [project]
 name = "pixi-devenv"
-version = "0.3.1"
-description = "Add your description here"
+version = "0.1.0"
+description = "Tool to work with multiple pixi projects in development mode"
 readme = "README.md"
 authors = [
     { name = "ESSS", email = "dev@esss.com" }
