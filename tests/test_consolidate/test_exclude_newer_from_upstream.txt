@@ -4,6 +4,7 @@ ConsolidatedProject(name='a',
                     exclude_newer='7d',
                     dependencies={},
                     pypi_dependencies={},
+                    constraints={},
                     env_vars={},
                     target={},
                     feature={})
