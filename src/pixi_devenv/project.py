@@ -262,6 +262,18 @@ class Project:
     # this value wins.
     exclude_newer: str | None = serde.field(rename="exclude-newer", default=None)
 
+    # Per conda package overrides for `exclude_newer`, e.g. to whitelist internal packages for
+    # immediate updates. Merged across the workspace; the most-downstream project that sets a given
+    # package wins.
+    exclude_newer_overrides: dict[str, str] = serde.field(
+        rename="exclude-newer-overrides", default_factory=dict
+    )
+
+    # Same as `exclude_newer_overrides`, but for PyPI packages.
+    pypi_exclude_newer_overrides: dict[str, str] = serde.field(
+        rename="pypi-exclude-newer-overrides", default_factory=dict
+    )
+
     # List of upstream projects.
     upstream: tuple[str | Upstream, ...] = ()
 

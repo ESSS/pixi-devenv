@@ -13,6 +13,7 @@ from pixi_devenv.consolidate import (
     ConsolidatedProject,
     MergedSpec,
     MergedEnvVarValue,
+    MergedExcludeNewer,
     Shell,
     ConsolidatedFeature,
     target_matches_platforms,
@@ -56,6 +57,15 @@ def _update_pixi_contents(contents: str, consolidated: ConsolidatedProject) -> s
     for name, table in tables.items():
         doc[name] = table
 
+    if exclude_newer_table := _create_exclude_newer_table(consolidated.exclude_newer_overrides):
+        doc["exclude-newer"] = exclude_newer_table
+    else:
+        doc.pop("exclude-newer", None)
+    if pypi_exclude_newer_table := _create_exclude_newer_table(consolidated.pypi_exclude_newer_overrides):
+        doc["pypi-exclude-newer"] = pypi_exclude_newer_table
+    else:
+        doc.pop("pypi-exclude-newer", None)
+
     features_table = _make_table()
     for feature_name, feature in consolidated.feature.items():
         tables = _get_project_or_feature_tables(feature, consolidated.platforms)
@@ -84,6 +94,8 @@ def _update_workspace_fields(doc: tomlkit.TOMLDocument, consolidated: Consolidat
     if consolidated.exclude_newer is not None:
         doc["workspace"]["exclude-newer"] = consolidated.exclude_newer  # type:ignore[index]
         doc["workspace"]["exclude-newer"].comment(_MANAGED_COMMENT)  # type:ignore[index, union-attr]
+    else:
+        doc["workspace"].pop("exclude-newer", None)  # type:ignore[union-attr]
 
 
 def _get_project_or_feature_tables(
@@ -235,5 +247,19 @@ def _create_dependencies_table(deps: Mapping[str, MergedSpec]) -> Table | None:
             inline_table.update(dict_spec)
             result.add(name, inline_table)
         result[name].comment(f"From: {', '.join(merged_spec.sources)}")
+
+    return result
+
+
+def _create_exclude_newer_table(overrides: Mapping[str, MergedExcludeNewer]) -> Table:
+    """
+    Renders a per-package `exclude-newer` override table (`[exclude-newer]` or `[pypi-exclude-newer]`).
+    """
+    result = tomlkit.table()
+    result.comment(_MANAGED_COMMENT)
+
+    for name, merged in overrides.items():
+        result.add(name, merged.value)
+        result[name].comment(f"From: {', '.join(merged.sources)}")
 
     return result

@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import string
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import PurePath, Path
@@ -105,6 +105,8 @@ def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
     channels: tuple[str, ...] = ()
     platforms: tuple[str, ...] = ()
     exclude_newer: str | None = None
+    exclude_newer_overrides: dict[str, MergedExcludeNewer] = {}
+    pypi_exclude_newer_overrides: dict[str, MergedExcludeNewer] = {}
 
     for project in workspace.iter_downstream():
         if project.channels:
@@ -113,6 +115,12 @@ def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
             platforms = project.platforms
         if project.exclude_newer is not None:
             exclude_newer = project.exclude_newer
+        _update_exclude_newer_overrides(
+            exclude_newer_overrides, project.name, project.exclude_newer_overrides
+        )
+        _update_exclude_newer_overrides(
+            pypi_exclude_newer_overrides, project.name, project.pypi_exclude_newer_overrides
+        )
 
     # Consolidate root aspects.
     root_aspect = _consolidate_aspects(
@@ -128,6 +136,8 @@ def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
         channels=channels,
         platforms=platforms,
         exclude_newer=exclude_newer,
+        exclude_newer_overrides=exclude_newer_overrides,
+        pypi_exclude_newer_overrides=pypi_exclude_newer_overrides,
         dependencies=root_aspect.dependencies,
         pypi_dependencies=root_aspect.pypi_dependencies,
         constraints=root_aspect.constraints,
@@ -135,6 +145,20 @@ def consolidate_devenv(workspace: Workspace) -> ConsolidatedProject:
         target=consolidated_target,
         feature=consolidated_feature,
     )
+
+
+def _update_exclude_newer_overrides(
+    result: dict[str, MergedExcludeNewer], project_name: ProjectName, overrides: Mapping[str, str]
+) -> None:
+    """
+    Folds a project's `exclude-newer` overrides into `result`, tracking sources and letting the
+    most-downstream project win for a given package.
+    """
+    for package_name, value in overrides.items():
+        sources = (
+            result[package_name].sources + (project_name,) if package_name in result else (project_name,)
+        )
+        result[package_name] = MergedExcludeNewer(sources=sources, value=value)
 
 
 @dataclass
@@ -150,6 +174,8 @@ class ConsolidatedProject:
     channels: tuple[str, ...]
     platforms: tuple[str, ...]
     exclude_newer: str | None
+    exclude_newer_overrides: dict[str, MergedExcludeNewer]
+    pypi_exclude_newer_overrides: dict[str, MergedExcludeNewer]
 
     dependencies: dict[str, MergedSpec]
     pypi_dependencies: dict[str, MergedSpec]
@@ -160,6 +186,18 @@ class ConsolidatedProject:
 
 
 type Sources = tuple[ProjectName, ...]
+
+
+@dataclass(frozen=True)
+class MergedExcludeNewer:
+    """
+    A per-package `exclude-newer` override, tracking which projects contributed to it.
+
+    The most-downstream project that sets a given package wins.
+    """
+
+    sources: Sources
+    value: str
 
 
 @dataclass(frozen=True)
