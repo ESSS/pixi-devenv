@@ -167,3 +167,44 @@ def test_exclude_newer_update(devenv_tester: DevEnvTester, file_regression: File
 
     update_pixi_config(pixi.parent)
     file_regression.check(pixi.read_text(encoding="UTF-8"))
+
+
+def test_exclude_newer_overrides_removed_on_update(
+    devenv_tester: DevEnvTester, file_regression: FileRegressionFixture
+) -> None:
+    """Test that a stale `exclude-newer` field and `[exclude-newer]`/`[pypi-exclude-newer]` tables
+    are removed from `pixi.toml` once they are no longer set in `pixi.devenv.toml`."""
+    devenv_tester.write_devenv(
+        "bootstrap",
+        """
+        [devenv]
+        channels = ["conda-forge"]
+        platforms = ["linux-64"]
+        """,
+    )
+    devenv_tester.write_devenv(
+        "a",
+        """
+        devenv.upstream = ["../bootstrap"]
+        """,
+    )
+
+    pixi = devenv_tester.write_pixi(
+        "a",
+        dedent("""
+        [workspace]
+        name = "some project"
+        channels = ["conda-forge"]
+        platforms = ["linux-64"]
+        exclude-newer = "2025-01-01" # Managed by devenv
+
+        [exclude-newer] # Managed by devenv
+        deps = "0d" # From: bootstrap
+
+        [pypi-exclude-newer] # Managed by devenv
+        some-internal-package = "0d" # From: bootstrap
+        """),
+    )
+
+    update_pixi_config(pixi.parent)
+    file_regression.check(pixi.read_text(encoding="UTF-8"))

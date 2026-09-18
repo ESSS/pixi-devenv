@@ -151,14 +151,12 @@ def _update_exclude_newer_overrides(
     result: dict[str, MergedExcludeNewer], project_name: ProjectName, overrides: Mapping[str, str]
 ) -> None:
     """
-    Folds a project's `exclude-newer` overrides into `result`, tracking sources and letting the
-    most-downstream project win for a given package.
+    Folds a project's `exclude-newer` overrides into `result`, letting the most-downstream project
+    win for a given package. Unlike dependency specs, overrides are not merged, so `sources` only
+    tracks the project that contributed the winning value, not every project that ever set it.
     """
     for package_name, value in overrides.items():
-        sources = (
-            result[package_name].sources + (project_name,) if package_name in result else (project_name,)
-        )
-        result[package_name] = MergedExcludeNewer(sources=sources, value=value)
+        result[package_name] = MergedExcludeNewer(sources=(project_name,), value=value)
 
 
 @dataclass
