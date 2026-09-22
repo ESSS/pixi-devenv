@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## UNRELEASED
+
+* Added support for `[devenv.exclude-newer-overrides]` and `[devenv.pypi-exclude-newer-overrides]` tables, letting individual packages override the workspace-wide `exclude-newer` cutoff (e.g. to whitelist internal packages for immediate updates). They are written to the `[exclude-newer]` and `[pypi-exclude-newer]` tables in the generated `pixi.toml`.
+
 ## 1.0.0
 
 *2026-05-25*

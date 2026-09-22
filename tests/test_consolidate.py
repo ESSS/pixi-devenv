@@ -580,3 +580,56 @@ def test_exclude_newer(
     file_regression.check(
         devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_overwrite"
     )
+
+
+def test_exclude_newer_overrides(
+    devenv_tester: DevEnvTester, file_regression: FileRegressionFixture, request: pytest.FixtureRequest
+) -> None:
+    """Test that per-package exclude-newer overrides are merged across the workspace, with the
+    most-downstream project winning for a given package."""
+    devenv_tester.write_devenv(
+        "bootstrap",
+        """
+        [devenv]
+        exclude-newer = "2025-01-01"
+
+        [devenv.exclude-newer-overrides]
+        deps = "0d"
+        openssl = "7d"
+
+        [devenv.pypi-exclude-newer-overrides]
+        some-internal-package = "0d"
+        """,
+    )
+    a_toml = devenv_tester.write_devenv(
+        "a",
+        """
+        devenv.upstream = ["../bootstrap"]
+        """,
+    )
+    ws = Workspace.from_starting_file(a_toml)
+    project = consolidate_devenv(ws)
+
+    # Downstream inherits the overrides from upstream.
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_from_upstream"
+    )
+
+    # Downstream overrides one existing package and adds a new one.
+    a_toml = devenv_tester.write_devenv(
+        "a",
+        """
+        devenv.upstream = ["../bootstrap"]
+
+        [devenv.exclude-newer-overrides]
+        openssl = "0d"
+        another-package = "1d"
+        """,
+    )
+    ws = Workspace.from_starting_file(a_toml)
+    project = consolidate_devenv(ws)
+
+    # The downstream value wins for "openssl", "deps" is untouched, "another-package" is added.
+    file_regression.check(
+        devenv_tester.pprint_for_regression(project), basename=f"{request.node.name}_overwrite"
+    )

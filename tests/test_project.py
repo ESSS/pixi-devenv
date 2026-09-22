@@ -32,7 +32,13 @@ def test_parse_complete_case(devenv_tester: DevEnvTester, file_regression: FileR
     
     [devenv.constraints]
     qt = ">=5.15"
-    
+
+    [devenv.exclude-newer-overrides]
+    deps = "0d"
+
+    [devenv.pypi-exclude-newer-overrides]
+    some-internal-package = "0d"
+
     [devenv.target.win.dependencies]
     pywin32 = ">=3.20"
     

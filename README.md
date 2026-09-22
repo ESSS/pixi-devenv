@@ -147,6 +147,28 @@ Basic information about the project. `channels` and `platforms` are inherited by
 
 
 ```toml
+[devenv]
+exclude-newer = "2025-01-01"
+
+[devenv.exclude-newer-overrides]
+deps = "0d"
+
+[devenv.pypi-exclude-newer-overrides]
+some-internal-package = "0d"
+```
+
+Optional date cutoff for the package resolver: excludes conda/PyPI packages newer than the given
+date or duration, e.g. `"7d"` or `"2025-06-01T00:00:00Z"`. Propagates downstream; the most-downstream
+project that sets `exclude-newer` wins.
+
+`exclude-newer-overrides` and `pypi-exclude-newer-overrides` let individual conda/PyPI packages
+override the workspace-wide cutoff, which is useful to whitelist internal packages (such as `deps`
+above) for immediate updates while keeping third-party packages pinned. They are written to the
+`[exclude-newer]` and `[pypi-exclude-newer]` tables in `pixi.toml`. Overrides are merged across the
+workspace; for a given package, the most-downstream project that sets it wins.
+
+
+```toml
 [devenv.dependencies]
 attrs = "*"
 boltons = "*"
