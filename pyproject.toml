@@ -1,6 +1,6 @@
 [project]
 name = "pixi-devenv"
-version = "0.1.0"
+version = "1.1.0"
 description = "Tool to work with multiple pixi projects in development mode"
 readme = "README.md"
 authors = [
